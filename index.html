@@ -128,7 +128,7 @@ button{cursor:pointer;outline:none;font-size:clamp(10px,calc(var(--u)*3),13px);m
 #tsvg path{fill:none;stroke:#e8a21a;stroke-width:1.3px;vector-effect:non-scaling-stroke;stroke-linejoin:round}
 #table .az{position:absolute;border:0;padding:0;margin:0;flex:none;display:block;font-size:clamp(7px,calc(var(--u)*1.9),11px);line-height:1.1}
 #table .az .lb{position:absolute;left:var(--lx);top:var(--ly);transform:translate(-50%,-50%) rotate(var(--rot,0deg));text-align:center;width:max-content;max-width:96%;pointer-events:none}
-.az .bet{left:var(--lx);top:calc(var(--ly) + 1.9em);right:auto;bottom:auto;transform:translate(-50%,-50%);z-index:3}
+.az .bet{left:var(--lx);top:var(--ly);right:auto;bottom:auto;transform:translate(-50%,-50%);z-index:3}
 .az .pile{left:var(--lx);top:calc(var(--ly) + 1.9em);transform:translate(-50%,-50%);z-index:3}
 #table .az.hot{background:#ffffff40;outline:0}
 #table .az.blink{animation:bk .7s infinite alternate}
@@ -273,9 +273,9 @@ addEventListener('pointerup',e=>{if(!drag.on)return;drag.on=false;$('ghost').sty
 function zoneAt(x,y){const el=document.elementFromPoint(x,y);return el&&el.closest('[data-zone]')}
 function renderBet(z,id){z.querySelector('.bet')?.remove();document.querySelector('.bet[data-b="'+id+'"]')?.remove();const a=S.bets[id];if(!a||!a.length)return;
  const b=document.createElement('div');b.className='bet amt';const ch=chipEl(a[a.length-1]),tx=fmt(total(a));ch.textContent=tx;ch.dataset.l=Math.min(tx.length,6);b.appendChild(ch);
- if(z.classList.contains('az')){b.classList.add('ov');b.dataset.b=id;b.style.setProperty('--cs',z.style.getPropertyValue('--cs'));
+ if(z.classList.contains('az')){b.classList.add('ov');b.dataset.b=id;
   b.style.left=(parseFloat(z.style.left)+parseFloat(z.style.width)*parseFloat(z.style.getPropertyValue('--lx'))/100)+'%';
-  b.style.top='calc('+(parseFloat(z.style.top)+parseFloat(z.style.height)*parseFloat(z.style.getPropertyValue('--ly'))/100)+'% + 1.9em)';$('table').appendChild(b)}
+  b.style.top=(parseFloat(z.style.top)+parseFloat(z.style.height)*parseFloat(z.style.getPropertyValue('--ly'))/100)+'%';$('table').appendChild(b)}
  else z.appendChild(b)}
 /* ===== Angle Aye + card placement (UI) ===== */
 const rank=['A','2','3','4','5','6','7','8','9','10','J','Q','K'],suit=['♠','♥','♦','♣'];
@@ -878,16 +878,17 @@ $('zout').onclick=()=>document.body.classList.remove('zoomed');
 setSt('IDLE');tick();
 </script>
 <script>
-/* chip bet co theo kích thước thật của từng ô: luôn nằm gọn trong ô */
+/* mọi chip bet cùng 1 kích thước = vừa với ô nhỏ nhất, đặt đúng tâm ô */
 (()=>{const T=document.getElementById('table'),RX=49.5,RY=93;
  function sizeZones(){const W=T.offsetWidth,H=T.offsetHeight;if(!W||!H)return;
-  const zoom=document.body.classList.contains('zoomed'),mx=zoom?42:28;
-  T.querySelectorAll('.az').forEach(z=>{if(!z._g)return;const[t0,t1,r0,r1]=z._g,tm=(t0+t1)/2,rm=(r0+r1)/2,th=(180-tm)*Math.PI/180;
+  const zoom=document.body.classList.contains('zoomed');let m=1e9;
+  T.querySelectorAll('.az').forEach(z=>{if(!z._g||/^ins:/.test(z.dataset.zone))return;const[t0,t1,r0,r1]=z._g,tm=(t0+t1)/2,rm=(r0+r1)/2,th=(180-tm)*Math.PI/180;
    const rad=(r1-r0)*Math.hypot(RX/100*W*Math.cos(th),RY/100*H*Math.sin(th)),
          tan=Math.abs(t1-t0)*Math.PI/180*rm*Math.hypot(RX/100*W*Math.sin(th),RY/100*H*Math.cos(th));
-   const s=Math.max(12,Math.min(mx,Math.floor(Math.min(rad,tan)*.62)));
-   z.style.setProperty('--cs',s+'px')});
-  T.querySelectorAll('.bet.ov').forEach(b=>{const z=T.querySelector('[data-zone="'+b.dataset.b+'"]');z&&b.style.setProperty('--cs',z.style.getPropertyValue('--cs'))})}
+   m=Math.min(m,rad,tan)});
+  if(m>=1e9)return;
+  const s=Math.max(12,Math.min(zoom?42:28,Math.floor(m*.82)));
+  T.style.setProperty('--cs',s+'px')}
  window.sizeZones=sizeZones;sizeZones();
  ['resize','orientationchange'].forEach(e=>addEventListener(e,()=>{sizeZones();setTimeout(sizeZones,150);setTimeout(sizeZones,450)}));
  window.visualViewport&&visualViewport.addEventListener('resize',()=>setTimeout(sizeZones,0));
