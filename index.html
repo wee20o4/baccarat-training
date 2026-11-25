@@ -139,6 +139,8 @@ button{cursor:pointer;outline:none;font-size:clamp(10px,calc(var(--u)*3),13px);m
 #table .closeins{position:absolute;left:50%;top:92%;transform:translate(-50%,-50%);z-index:5;min-height:30px;padding:0 8px;font-size:clamp(9px,calc(var(--u)*2.2),12px)}
 #bank button.bk{align-self:center;min-height:40px;padding:0 14px;font-size:13px}
 #table #moreb{position:absolute;left:6px;top:6px;z-index:5;min-height:32px;padding:0 12px;font-size:clamp(10px,calc(var(--u)*2.4),13px)}
+#tsvg path.insbuy{stroke:#c40000;stroke-width:4px;fill:#c4000040}
+#table .az.insbuy{background:#c4000033}
 </style></head><body>
 <div id="note"></div><div id="dbg"></div>
 <div id="app">
@@ -329,7 +331,7 @@ const az=(id,label,cls,sub,t0,t1,r0,r1)=>{const poly=ring(t0,t1,r0,r1),xs=poly.m
  let rot=0;
  d.style.setProperty('--lx',((c[0]-x0)/w*100)+'%');d.style.setProperty('--ly',((c[1]-y0)/h*100)+'%');d.style.setProperty('--rot',rot+'deg');
  d.innerHTML='<span class="lb">'+label+(sub?'<br><span style="font-weight:400">'+sub+'</span>':'')+'</span>';
- const p=document.createElementNS(NS,'path');p.setAttribute('d','M'+poly.map(q=>q[0].toFixed(2)+','+q[1].toFixed(2)).join('L')+'Z');svg.appendChild(p);
+ const p=document.createElementNS(NS,'path');p.setAttribute('d','M'+poly.map(q=>q[0].toFixed(2)+','+q[1].toFixed(2)).join('L')+'Z');svg.appendChild(p);d._path=p;
  T.appendChild(d);return d};
 const sd=(n,sub,cl,t0,t1,r0,r1)=>az('side:'+n+':'+(k++),n,'s '+cl,null,t0,t1,r0,r1);
 const RA=[0.52,0.65],RB=[0.39,0.52],RC=[0.26,0.39];
@@ -479,7 +481,7 @@ document.addEventListener('click',e=>{const z=e.target.closest('[data-zone]');if
 function confirmIns(){const amt=+$('ai').value,o=E.offer;if(!(amt>0))return err('Insurance','Invalid amount','');
  const m=E.insM[o.side];if(m&&(m.num!==o.num||m.kind!==o.kind))return err('Insurance','Khác tỷ lệ','');
  if(amt%50000||(o.num===3&&amt%100000))return err('Insurance','Invalid Unit','');
- if(amt>o.amt0)return err('Insurance','Missing chips','Tiền bot đưa không đủ');
+ 
  const used=(E.used[o.zone]||0)+amt;if(used*o.num>total(S.bets[o.zone])*o.den)return err('Insurance','Vượt Main Bet','');
  E.used[o.zone]=used;const tot=(m?m.amt:0)+amt;E.insM[o.side]={amt:tot,num:o.num,den:o.den,kind:o.kind,side:o.side};
  S.bets['ins:'+o.side]=chipsFor(tot);renderBet(zEl('ins:'+o.side),'ins:'+o.side);E.offer=null;document.querySelectorAll('.pile').forEach(e=>e.remove());ov.style.display='none';say('Đã nhận Insurance',1200)}
@@ -498,7 +500,7 @@ function statText(){const s=S.state;if(s==='IDLE')return'Chờ ván';if(s==='COM
  if(E.insOpen)return'Đang bán bảo hiểm';const n=stg();if(S.drawn||(n>0&&n<4))return'Đang kéo bài';return'Game đang diễn ra'}
 try{E.hist=JSON.parse(localStorage.getItem('bdt_h')||'[]')}catch(e){E.hist=[]}
 let prevSt=S.state;
-function tick(){const s=S.state;
+function tick(){const s=S.state;if(!E.insOpen&&document.querySelector('.insbuy'))clearHi();
  if(s!==prevSt){if(s==='BETTING'){E.t0=null;E.tE=null}
   else if((s==='COMPLETE'||s==='FATAL')&&!E.tE){E.tE=Date.now();E.t0=E.t0||E.tE;const f=s==='FATAL';
    E.hist.unshift({r:f?'LỖI':E.R.w[0]+' '+E.R.p+'-'+E.R.b,c:f?'x':E.R.w[0],s:Math.round((E.tE-E.t0)/1000)});E.hist=E.hist.slice(0,10);
@@ -526,8 +528,8 @@ function paintSlot(i,up){S.up=S.up||[];S.up[i]=!!up;const s=cards.children[i],c=
 {const pc1=$('pc').onclick;$('pc').onclick=()=>{if(!E.insOpen)grp(sel).forEach(j=>{if(S.cards[j])S.up[j]=true});pc1()}}
 E.place=i=>{if(i!==nextSlot()){err('Place Card','Incorrect Card Position','',1);return false}
  if(i>3&&(i===5&&b3First()?pairLose().filter(id=>side(id)==='BANKER PAIR'):pairLose()).length){err('Place Card','Pair Not Collected','',1);return false}
- if(i===5&&S.cards[4]&&!S.up[4]){err('Place Card','Banker Third Card: Player Third Card chưa mở','',1);return false}return true};
-{const s1=$('shoe').onclick;$('shoe').onclick=()=>{if(S.state==='DEALING'&&!S.drawn&&nextSlot()===5&&S.cards[4]&&!S.up[4])return err('Draw Card','Banker Third Card: Player Third Card chưa mở','',1);s1()}}
+ if(i===5&&S.cards[4]&&!S.up[4]&&!indB()){err('Place Card','Banker Third Card: Player Third Card chưa mở','',1);return false}return true};
+{const s1=$('shoe').onclick;$('shoe').onclick=()=>{if(S.state==='DEALING'&&!S.drawn&&nextSlot()===5&&S.cards[4]&&!S.up[4]&&!indB())return err('Draw Card','Banker Third Card: Player Third Card chưa mở','',1);s1()}}
 {const ng2=B['Next Game'];B['Next Game']=()=>{const was=S.state;ng2();if(S.state==='BETTING'&&was!=='BETTING')S.up=[]}}
 {const a=$('aye');a.insertBefore($('hist'),$('shoe'));a.insertBefore($('drawn'),$('shoe'))}
 /* ===== đổi tiền: nhiều popup cùng lúc, đổi được cả lúc bán Insurance ===== */
@@ -590,6 +592,11 @@ const resNow=()=>{const p=pt(hand('P')),b=pt(hand('B'));return p>b?'PLAYER':b>p?
 const mainLoseNow=()=>{const w=resNow();return Object.keys(S.bets).filter(id=>id.startsWith('main:')&&w!=='TIE'&&id.split(':')[2]!==w)};
 const allUp=()=>S.cards.every((c,i)=>!c||S.up[i]);
 const bThirdPending=()=>!!(S.cards[5]&&!S.up[5]&&nextSlot()===null&&[0,1,2,3,4].every(i=>!S.cards[i]||S.up[i]));   // mọi lá đã đặt đều phải ngửa
+// Banker 0-2 điểm + Player rút: Banker BẮT BUỘC rút lá 3 không phụ thuộc lá 3 của Player -> kéo cả 2 lá úp trước rồi mới mở
+const indB=()=>{if(![0,1,2,3].every(i=>S.cards[i]))return false;const p=pt(hand('P').slice(0,2)),b=pt(hand('B').slice(0,2));return p<8&&b<8&&p<=5&&b<=2};
+const first4Up=()=>[0,1,2,3].every(i=>S.up[i]);
+const thirdA=()=>indB()&&first4Up()&&!!S.cards[4]&&!S.cards[5]&&nextSlot()===5;
+const bothThird=()=>indB()&&first4Up()&&!!S.cards[4]&&!!S.cards[5]&&(!S.up[4]||!S.up[5]);
 const sideUp=k=>{const g=k==='P'?[0,1]:[2,3];return g.every(i=>S.cards[i]&&S.up[i])};
 const pairSideUp=id=>sideUp(side(id)==='PLAYER PAIR'?'P':'B');
 const fourUp=()=>sideUp('P')&&sideUp('B');                 // cả 4 lá đầu đã mở
@@ -598,14 +605,16 @@ const pairLoseOpen=()=>fourUp()?pairLose():[];             // chỉ gom được
 function natWin(){if(stg()!==4)return false;const p=pt(hand('P').slice(0,2)),b=pt(hand('B').slice(0,2));if(p<8&&b<8)return false;
  const up=sideUp('P')?'P':sideUp('B')?'B':null;if(!up||(sideUp('P')&&sideUp('B')))return false;return(up==='P'?p:b)>=8}
 const natHand=()=>{const p=pt(hand('P').slice(0,2)),b=pt(hand('B').slice(0,2));return p>=8||b>=8};
-function upGate(sell){if(S.state!=='DEALING'||stg()<4||allUp()||bThirdPending())return false;if(sell&&natWin())return false;
+function upGate(sell){if(S.state==='DEALING'&&thirdA()){if(sell){say('Nhắc nhở: cả 2 nhà đều rút lá 3, phải kéo lá thứ 3 của Banker ra úp trước khi bán bảo hiểm');return true}return false}
+ if(S.state==='DEALING'&&bothThird())return false;
+ if(S.state!=='DEALING'||stg()<4||allUp()||bThirdPending())return false;if(sell&&natWin())return false;
  say('Nhắc nhở: phải mở/pass đủ 4 lá bài trước khi bán bảo hiểm, kéo lá thứ 3 hoặc thu Pair');return true}
 function pairGate(){if(S.state==='DEALING'&&b3First()&&sideUp('B')&&pairLose().some(id=>side(id)==='BANKER PAIR')){say('Nhắc nhở: thu Pair trước khi làm bước khác');return true}
  if(S.state!=='DEALING'||stg()<4||!allUp()||done4()||!pairLoseOpen().length)return false;
  say('Nhắc nhở: thu Pair trước khi làm bước khác');return true}
 function insDue(actSide){if(S.state!=='DEALING'||E.insOpen||E.insClosed[stg()])return false;
  if(natHand()){if(!natWin())return false;if(actSide&&sideUp(actSide==='PLAYER'?'P':'B'))return false}   // natural: phải bán trước khi mở nhà còn lại
- else if(!bThirdPending()&&(!allUp()||nextSlot()===null))return false;
+ else if(!bThirdPending()&&!bothThird()&&(!allUp()||nextSlot()===null))return false;
  const a=avail();if(!a)return false;
  return Object.keys(S.bets).some(id=>id.startsWith('main:')&&(!a.buy||id.endsWith(':'+a.buy)))}
 function insMissed(act,actSide){if(!insDue(actSide))return false;err(act,'Bỏ qua bán Insurance','Ván có bảo hiểm nhưng không bán mà làm việc khác',1);return true}
@@ -623,7 +632,9 @@ function bankerFirst(){const m=Object.keys(S.bets).filter(id=>id.startsWith('mai
  if(S.state==='FATAL'){$('cardAct').style.display='none';return dead()}
  if(S.state==='DEALING'&&!E.insOpen){const sd=sideOf(sel);
   if(k==='oc'&&sd==='PLAYER'&&bankerFirst()){$('cardAct').style.display='none';return err('Open Card','Sai thứ tự mở bài','Khách chỉ đặt Banker: phải pass Banker cho khách trước khi mở Player',1)}
-  if(pairGate()||insMissed(k==='oc'?'Open Card':'Pass Card',sd)){$('cardAct').style.display='none';return}}
+  if(thirdA()&&grp(sel).includes(4)){$('cardAct').style.display='none';return err(k==='oc'?'Open Card':'Pass Card','Sai thứ tự','Cả 2 nhà đều rút lá 3: phải kéo lá thứ 3 của Banker ra úp trước, rồi mới mở/pass Player',1)}
+  if(pairGate()||insMissed(k==='oc'?'Open Card':'Pass Card',sd)){$('cardAct').style.display='none';return}
+  if(bothThird()&&grp(sel).includes(4)&&!S.up[5]&&!Object.keys(S.bets).some(id=>id.startsWith('main:')&&id.endsWith(':PLAYER'))){$('cardAct').style.display='none';return err(k==='oc'?'Open Card':'Pass Card','Sai thứ tự mở bài','Không có khách đặt Player: phải mở/pass lá thứ 3 của Banker trước để khách Banker mua bảo hiểm',1)}}
  f()}});
 /* ===== v9: mobile — khoá scroll/zoom, kéo-thả chip ổn định, chỉ nhấn được thứ cần nhấn ===== */
 (()=>{
@@ -737,16 +748,16 @@ function sell(rate){const a=avail();
  const n=Math.min(pool.length,2+rnd(3));E.offers=[];
  for(let i=0;i<n;i++){const zone=pool.splice(rnd(pool.length),1)[0],T=total(S.bets[zone]);
   E.offers.push({zone,side:sd,amt0:100000*(1+rnd(Math.max(1,Math.ceil(T/50000)))),num:a.rate*2,den:2,kind:a.kind,done:false})}
- (E.soldS[stg()]=E.soldS[stg()]||{})[sd]=1;E.insOpen=true;E.offers.forEach(o=>renderPile(zEl(o.zone),o.amt0))}
+ (E.soldS[stg()]=E.soldS[stg()]||{})[sd]=1;E.insOpen=true;E.offers.forEach(o=>hiOffer(o.zone,true))}
 function confirmIns(){const amt=+$('ai').value,o=E.cur;if(!o||o.done)return;
  if(!(amt>0))return err('Insurance','Invalid amount','');
  const m=E.insM[o.side];if(m&&(m.num!==o.num||m.kind!==o.kind))return err('Insurance','Khác tỷ lệ','');
  if(amt%50000||(o.num===3&&amt%100000))return err('Insurance','Invalid Unit','');
- if(amt>o.amt0)return err('Insurance','Missing chips','Tiền bot đưa không đủ');
+ 
  const used=(E.used[o.zone]||0)+amt;if(used*o.num>total(S.bets[o.zone])*o.den)return err('Insurance','Vượt Main Bet','');
  E.used[o.zone]=used;const tot=(m?m.amt:0)+amt;E.insM[o.side]={amt:tot,num:o.num,den:o.den,kind:o.kind,side:o.side};
  S.bets['ins:'+o.side]=chipsFor(tot);renderBet(zEl('ins:'+o.side),'ins:'+o.side);
- o.done=true;zEl(o.zone).querySelector('.pile')?.remove();E.cur=null;ov.style.display='none';say('Đã nhận Insurance',1200)}
+ o.done=true;hiOffer(o.zone,false);E.cur=null;ov.style.display='none';{const unit=o.num===3?100000:50000,mx=Math.floor(total(S.bets[o.zone])*o.den/o.num/unit)*unit;note(used>=mx?'Bạn đã mua maximum':'Bạn đã mua bảo hiểm',2200)}}
 /* Remove Chip: chạm vào cược (main hoặc side) để xoá chip */
 B['Remove Chip']=()=>{if(S.state!=='BETTING')return err('Remove Chip','Sai thời điểm','');E.rm=!E.rm;clearBlink();
  if(E.rm){Object.keys(S.bets).filter(id=>/^(main|side):/.test(id)).forEach(id=>zEl(id)?.classList.add('blink'));note('Remove Chip: chạm vào cược để xoá chip',2200)}};
@@ -759,7 +770,9 @@ function drawRm(){const id=E.rx,a=S.bets[id];if(!a||!a.length){ov.style.display=
  a.forEach((v,i)=>{const c=chipEl(v);c.style.setProperty('--s','30px');c.onclick=()=>{a.splice(i,1);if(a.length)renderBet(zEl(id),id);else clrBet(id);drawRm()};r.appendChild(c)});ov.appendChild(r);
  ov.appendChild(mk('Xóa hết',()=>{clrBet(id);ov.style.display='none'}));ov.appendChild(mk('Xong',()=>ov.style.display='none'));ov.style.display='flex'}
 setInterval(()=>{const b=$('rmb');if(b){b.style.background=E.rm?'#d4a62a':'';b.style.color=E.rm?'#000':''}},250);
-{const eg=B['End Game'];B['End Game']=()=>{if(S.state==='DEALING'&&bThirdPending()&&insMissed('End Game'))return;eg()}}
+{const eg=B['End Game'];B['End Game']=()=>{if(S.state==='DEALING'&&(bThirdPending()||bothThird())&&insMissed('End Game'))return;eg()}}
+function hiOffer(id,on){const z=zEl(id);if(!z)return;z.classList.toggle('insbuy',on);const p=z._path;if(p){p.classList.toggle('insbuy',on);if(on)p.parentNode.appendChild(p)}}
+function clearHi(){document.querySelectorAll('.insbuy').forEach(e=>e.classList.remove('insbuy'))}
 function uniqTotal(a,seen){let t=total(a);if(!seen.has(t)){seen.add(t);return a}
  for(let k=0;k<60;k++){t+=100000;if(seen.has(t))continue;const c=chipsFor(t);if(c.length<=10){seen.add(t);return c}}
  seen.add(total(a));return a}
