@@ -123,14 +123,29 @@ button{cursor:pointer;outline:none;font-size:clamp(10px,calc(var(--u)*3),13px);m
 #ov button,#ov input,#ov .chip{pointer-events:auto}
 #tbg{position:fixed;inset:0;z-index:79;background:transparent;display:none}
 @media (orientation:portrait){#app{padding:env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0) env(safe-area-inset-top,0)}}
+#table{position:relative;flex:1;min-height:0;display:block}
+#tsvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#tsvg path{fill:none;stroke:#e8a21a;stroke-width:1.3px;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+#table .az{position:absolute;border:0;padding:0;margin:0;flex:none;display:block;font-size:clamp(7px,calc(var(--u)*1.9),11px);line-height:1.1}
+#table .az .lb{position:absolute;left:var(--lx);top:var(--ly);transform:translate(-50%,-50%) rotate(var(--rot,0deg));text-align:center;width:max-content;max-width:96%;pointer-events:none}
+.az .bet{left:var(--lx);top:calc(var(--ly) + 1.9em);right:auto;bottom:auto;transform:translate(-50%,-50%);z-index:3}
+.az .pile{left:var(--lx);top:calc(var(--ly) + 1.9em);transform:translate(-50%,-50%);z-index:3}
+#table .az.hot{background:#ffffff40;outline:0}
+#table .az.blink{animation:bk .7s infinite alternate}
+#table .sn{position:absolute;transform:translate(-50%,-50%);color:#fff;font:800 clamp(9px,calc(var(--u)*2.4),14px) system-ui,sans-serif;pointer-events:none;z-index:2}
+#table .logo{position:absolute;left:50%;top:80%;font-size:10px;text-align:center;transform:translate(-50%,-50%);flex:none;z-index:1;white-space:nowrap}
+#table .insbtn{position:absolute;top:92%;transform:translate(-50%,-50%);z-index:5;min-height:30px;padding:0 8px;font-size:clamp(9px,calc(var(--u)*2.2),12px)}
+#table .insbtn.PLAYER{color:#ff7b7b}
+#table .closeins{position:absolute;left:50%;top:92%;transform:translate(-50%,-50%);z-index:5;min-height:30px;padding:0 8px;font-size:clamp(9px,calc(var(--u)*2.2),12px)}
+#bank button.bk{align-self:center;min-height:40px;padding:0 14px;font-size:13px}
+#table #moreb{position:absolute;left:6px;top:6px;z-index:5;min-height:32px;padding:0 12px;font-size:clamp(10px,calc(var(--u)*2.4),13px)}
 </style></head><body>
 <div id="note"></div><div id="dbg"></div>
 <div id="app">
  <div id="top"><span class="st" id="st">IDLE</span><span class="st" id="gn">Game #0</span>
   <button id="flow">Next Game</button><button id="lc" style="display:none"></button><button id="rmb" data-a="Remove Chip">Remove Chip</button>
-  <button id="insb">Sell Ins.</button><button data-a="Collect Pair">Collect Pair</button>
-  <button data-a="End Game">End Game</button><button data-a="Pay Winning Bets">Pay</button>
-  <button data-a="Settings">Settings</button><button data-a="Error Log">Error Log</button><button id="rs">Reset</button></div>
+  <button id="insb" style="display:none">Close Ins.</button>
+  <button data-a="Settings">Settings</button><button id="rs">Reset</button></div>
  <div id="main">
   <div id="aye"><div id="shoe">ANGLE<br>AYE<br><span style="font-size:8px;color:#fff">chạm để kéo</span></div><div id="drawn"></div><div id="hist"></div></div>
   <div id="center">
@@ -140,7 +155,7 @@ button{cursor:pointer;outline:none;font-size:clamp(10px,calc(var(--u)*3),13px);m
     <div id="tray"><div class="tt" id="trayT">Working area: 0</div><div id="trayChips"></div></div></div>
   </div>
  </div>
- <div id="bank"></div>
+ <div id="bank"><button data-a="Pay Winning Bets" class="bk">Pay</button><button data-a="Collect Pair" class="bk">Collect Pair</button></div>
 </div>
 <div id="res"><div style="width:100%;text-align:center">Kết quả ván?</div><button data-r="BANKER">BANKER</button><button data-r="PLAYER">PLAYER</button><button data-r="TIE">TIE GAME</button><button id="rc">Hủy</button></div><div id="menu"></div><div id="toast"></div><div id="ghost"></div>
 <div id="cardAct"><button id="oc">OPEN CARD</button><button id="pc">PASS CARD</button></div>
@@ -249,14 +264,14 @@ const hand=k=>(k=='P'?[0,1,4]:[2,3,5]).map(i=>S.cards[i]).filter(Boolean);
 const bDraw=(b,p3)=>p3==null?b<=5:[1,1,1,p3!=8,p3>=2&&p3<=7,p3>=4&&p3<=7,p3>=6&&p3<=7,0,0,0][b]==1;
 function nextSlot(){const n=S.cards.filter(Boolean).length;if(n<4)return[0,2,1,3][n];
  const P=hand('P'),B=hand('B'),p=pt(P.slice(0,2)),b=pt(B.slice(0,2));if(p>=8||b>=8)return null;
- if(B.length==2&&b<=2)return 5;
  if(P.length==2&&p<=5)return 4;
+ if(B.length==2&&b<=2)return 5;
  if(B.length==2&&bDraw(b,P.length==3?vl(P[2]):null))return 5;return null}
 E.place=i=>{if(i!==nextSlot()){err('Place Card','Incorrect Card Position','',1);return false}return true};
 const zEl=id=>document.querySelector('[data-zone="'+id+'"]');
 const clrBet=id=>{delete S.bets[id];zEl(id)?.querySelector('.bet')?.remove()};
 const dead=()=>{if(S.state==='FATAL'){say('Game đã dừng — bấm Next Game hoặc Reset');return true}};
-function complete(){E.d.done++;save();setSt('COMPLETE');say('Game hoàn tất')}
+function complete(){E.d.done++;save();setSt('COMPLETE');note('Game hoàn tất',2000)}
 $('shoe').onclick=()=>{if(dead())return;
  if(!['LAST','DEALING'].includes(S.state))return err('Draw Card','Sai trình tự','Chưa thể kéo bài');
  if(S.drawn)return;if(nextSlot()===null)return err('Draw Card','Extra Card','Kéo thừa bài',1);
@@ -267,7 +282,7 @@ E.drop=id=>{if(S.state==='PAY'){const need=E.due[id];
  if(need==null){err('Pay','Incorrect position','Sai vị trí');return 1}
  if(total(S.work)!==need){err('Pay','Incorrect amount','Tiền chung sai');return 1}
  if(!S.work.every((v,i,a)=>!i||a[i-1]<=v)){err('Pay','Incorrect chip order','Chip nhỏ trước, lớn sau');return 1}
- delete E.due[id];clrBet(id);S.work=[];renderWork();say('Đã chung',1200);if(!Object.keys(E.due).length)complete();return 1}
+ delete E.due[id];clrBet(id);S.work=[];renderWork();note('Đã chung thành công',1600);if(!Object.keys(E.due).length)complete();return 1}
  if(S.state==='BETTING'||S.state==='IDLE')return 0;err('Bet','No more bet','Không thể đặt cược lúc này');return 1};
 function nextGame(){if(!['IDLE','COMPLETE','FATAL'].includes(S.state))return err('Next Game','Next Game sai thời điểm','Ván chưa hoàn tất');
  document.querySelectorAll('.bet').forEach(e=>e.remove());S.bets={};S.cards.fill(null);S.drawn=null;E.due={};E.st={};
@@ -299,22 +314,51 @@ const B={'Next Game':nextGame,'Last Call for Bets':lastCall,'End Game':endGame,'
 document.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{const a=b.dataset.a;if(S.state==='FATAL'&&a!=='Next Game'&&a!=='Error Log')return dead();
  (B[a]||(()=>say('“'+a+'” — chưa triển khai')))()});
 $('rs').addEventListener('click',()=>{E.d={games:0,done:0,fail:0,err:0,fatal:0,log:[]};save();S.gameNo=0;setSt('IDLE');document.querySelectorAll('.bet').forEach(e=>e.remove());$('lc').textContent='Last Call'});
-/* ===== layout theo ảnh ===== */
-(()=>{const T=$('table');let k=0;
-const el=(c,cl)=>{const d=document.createElement('div');d.className=cl||'';c.forEach(x=>d.appendChild(x));return d};
-const z=(n,sub,cl)=>zone('side:'+n+':'+(k++),n,'zone s '+cl,sub);
-const s76=()=>z('7/6','30/40/100','y'),BD=()=>z('BIG DRAGON','30 to 1','dr'),BT=()=>z('BIG TIGER','50 to 1','tg'),SD=()=>z('SMALL DRAGON','15 to 1','dr'),ST=()=>z('SMALL TIGER','22 to 1','tg'),TT=()=>z('TIER TIE','35 to 1','tg'),TI=()=>z('TIE','8 to 1','tg'),PP=()=>z('PLAYER PAIR','11 to 1','dr'),BP=()=>z('BANKER PAIR','11 to 1','tg');
-const main=(i,n,cl)=>zone('main:'+i+':'+n,n,'zone '+cl);
-const seat=(i,w)=>{const s=el([main(i,'PLAYER','p'),main(i,'BANKER','b')],'seat');s.style.flex=w||1;const n=document.createElement('i');n.textContent=i;s.prepend(n);return s};
-const vs=i=>[el([main(i,'PLAYER','p v')],'col'),el([main(i,'BANKER','b v')],'col')];
-const eL=el([s76(),TT(),TI(),BT(),ST(),BP()],'eg'),eR=el([TI(),TT(),s76(),BP(),ST(),BT()],'eg');
-const logo=el([],'logo');logo.textContent='The Grand';
-const mid=el([el([seat(2),seat(3,1.4),seat(5,1.4),seat(6)],'tr big'),
- el([BD(),s76(),BT(),s76(),BD(),s76(),BT(),s76(),BD()],'tr'),
- el([SD(),TT(),ST(),TT(),SD(),TT(),ST(),TT(),SD()],'tr'),
- el([PP(),TI(),BP(),TI(),PP(),TI(),BP(),TI(),PP()],'tr'),
- el([zone('ins:BANKER','BANKER INSURANCE','zone b ins'),logo,zone('ins:PLAYER','PLAYER INSURANCE','zone p ins')],'tr')],'');mid.id='mid';
-T.append(el([...vs(1),eL],'wing'),mid,el([eR,...vs(7).reverse()],'wing'));
+/* ===== layout nửa vòng cung (theo ảnh bàn Dragon Tiger Baccarat) ===== */
+(()=>{const T=$('table');T.innerHTML='';let k=0;
+const CX=50,CY=97,RX=49.5,RY=93,A=1.9,NS='http://www.w3.org/2000/svg';
+const xy=(t,r)=>{const a=(180-t)*Math.PI/180;return[CX+RX*r*Math.cos(a),CY-RY*r*Math.sin(a)]};
+const svg=document.createElementNS(NS,'svg');svg.id='tsvg';svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('preserveAspectRatio','none');T.appendChild(svg);
+const ring=(t0,t1,r0,r1)=>{const n=Math.max(2,Math.ceil(Math.abs(t1-t0)/3)),o=[],i=[];for(let j=0;j<=n;j++){const t=t0+(t1-t0)*j/n;o.push(xy(t,r1));i.push(xy(t,r0))}return o.concat(i.reverse())};
+const az=(id,label,cls,sub,t0,t1,r0,r1)=>{const poly=ring(t0,t1,r0,r1),xs=poly.map(p=>p[0]),ys=poly.map(p=>p[1]);
+ const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys),w=x1-x0,h=y1-y0;
+ const d=document.createElement('div');d.className='zone az '+cls;d.dataset.zone=id;
+ d.style.cssText='left:'+x0+'%;top:'+y0+'%;width:'+w+'%;height:'+h+'%;clip-path:polygon('+poly.map(p=>((p[0]-x0)/w*100).toFixed(2)+'% '+((p[1]-y0)/h*100).toFixed(2)+'%').join(',')+')';
+ const tm=(t0+t1)/2,rm=(r0+r1)/2,c=xy(tm,rm),th=(180-tm)*Math.PI/180;
+ const dr=(r1-r0)*Math.hypot(RX*A*Math.cos(th),RY*Math.sin(th)),dt=Math.abs(t1-t0)*Math.PI/180*rm*Math.hypot(RX*A*Math.sin(th),RY*Math.cos(th));
+ let rot=0;
+ d.style.setProperty('--lx',((c[0]-x0)/w*100)+'%');d.style.setProperty('--ly',((c[1]-y0)/h*100)+'%');d.style.setProperty('--rot',rot+'deg');
+ d.innerHTML='<span class="lb">'+label+(sub?'<br><span style="font-weight:400">'+sub+'</span>':'')+'</span>';
+ const p=document.createElementNS(NS,'path');p.setAttribute('d','M'+poly.map(q=>q[0].toFixed(2)+','+q[1].toFixed(2)).join('L')+'Z');svg.appendChild(p);
+ T.appendChild(d);return d};
+const sd=(n,sub,cl,t0,t1,r0,r1)=>az('side:'+n+':'+(k++),n,'s '+cl,null,t0,t1,r0,r1);
+const RA=[0.52,0.65],RB=[0.39,0.52],RC=[0.26,0.39];
+const F={s76:()=>['7/6','30/40/100','y'],BD:()=>['BIG DRAGON','30 to 1','dr'],BT:()=>['BIG TIGER','50 to 1','tg'],SD:()=>['SMALL DRAGON','15 to 1','dr'],ST:()=>['SMALL TIGER','22 to 1','tg'],TT:()=>['TIER TIE','35 to 1','tg'],TI:()=>['TIE','8 to 1','tg'],PP:()=>['PLAYER PAIR','11 to 1','dr'],BP:()=>['BANKER PAIR','11 to 1','tg']};
+const put=(f,t0,t1,r)=>{const [n,sub,cl]=F[f]();sd(n,sub,cl,t0,t1,r[0],r[1])};
+/* 6 ghế: Player vòng ngoài, Banker vòng trong */
+[[1,0,24],[2,24,60],[3,60,90],[5,90,120],[6,120,156],[7,156,180]].forEach(([i,t0,t1])=>{
+ az('main:'+i+':PLAYER','PLAYER','p',null,t0,t1,0.82,1.0);az('main:'+i+':BANKER','BANKER','b',null,t0,t1,0.65,0.82);
+ const c=xy((t0+t1)/2,0.975),n=document.createElement('div');n.className='sn';n.textContent=i;n.style.left=c[0]+'%';n.style.top=c[1]+'%';T.appendChild(n)});
+/* 9 cột giữa */
+const w9=132/9;
+[['BD','s76','BT','s76','BD','s76','BT','s76','BD'],['SD','TT','ST','TT','SD','TT','ST','TT','SD'],['PP','TI','BP','TI','PP','TI','BP','TI','PP']].forEach((row,ri)=>{
+ const r=[RA,RB,RC][ri];row.forEach((f,ci)=>put(f,24+ci*w9,24+(ci+1)*w9,r))});
+/* hai cánh: gần giữa = 7/6, TIER TIE, TIE ; sát mép = BIG TIGER, SMALL TIGER, BANKER PAIR */
+[[RA,'s76','BT'],[RB,'TT','ST'],[RC,'TI','BP']].forEach(([r,a,b])=>{put(a,12,24,r);put(b,0,12,r);put(a,156,168,r);put(b,168,180,r)});
+/* insurance + logo */
+az('ins:BANKER','BANKER INSURANCE','b ins',null,16,70,0.11,0.24);az('ins:PLAYER','PLAYER INSURANCE','p ins',null,110,164,0.11,0.24);
+const mkb=(side,x)=>{const b=document.createElement('button');b.className='insbtn '+side;b.textContent='Bán BH';b.style.left=x+'%';b.onclick=()=>{if(S.state==='FATAL')return dead();E.insSide=side;B['Sell Insurance']();tick()};T.appendChild(b)};
+mkb('BANKER',43);mkb('PLAYER',57);const mb=document.createElement('button');mb.id='moreb';mb.textContent='More Bet';T.appendChild(mb);
+mb.onclick=()=>{if(S.state==='FATAL')return dead();if(S.state!=='BETTING')return note('More Bet chỉ dùng được ở giai đoạn đặt cược',2200);
+ const pool=[...document.querySelectorAll('#table [data-zone^="main:"],#table [data-zone^="side:"]')].map(z=>z.dataset.zone).filter(id=>!S.bets[id]);
+ const n=Math.min(pool.length,5+rnd(4));if(!n)return note('Không còn vị trí trống');
+ for(let i=0;i<n;i++){const id=pool.splice(rnd(pool.length),1)[0];let a;
+  if(id.startsWith('main:')){a=chipsFor(E.set.min*(1+rnd(3)));if(betErr(a))a=chipsFor(E.set.min)}
+  else a=Array(1+rnd(5)).fill([1e5,5e5][rnd(2)]);
+  S.bets[id]=a;E.ord.push(id);renderBet(zEl(id),id)}
+ note('Đã thêm '+n+' vị trí cược',1800)};
+const cb=$('insb');cb.className='closeins';T.appendChild(cb);
+const logo=document.createElement('div');logo.className='logo';logo.textContent='The Grand';T.appendChild(logo);
 const six=document.createElement('div');six.id='six';six.onclick=()=>{S.six=!S.six;six.classList.toggle('on',S.six)};cards.appendChild(six)})();
 /* ===== Open/Pass theo cặp lá ===== */
 const grp=i=>i<2?[0,1]:i<4?[2,3]:[i];
@@ -340,7 +384,7 @@ function showEx(){exp.innerHTML='';if(!E.ex||!E.ex.length){exp.style.display='no
 const ng0=nextGame;B['Next Game']=()=>{const was=S.state;ng0();if(S.state!=='BETTING'||was==='BETTING')return;
  const zs=[...document.querySelectorAll('[data-zone^="side:"]')];
  for(let n=2+rnd(5);n>0&&zs.length;n--){const z=zs.splice(rnd(zs.length),1)[0],id=z.dataset.zone;S.bets[id]=Array(1+rnd(5)).fill([1e5,5e5][rnd(2)]);renderBet(z,id)}
- E.ex=[];const r=rnd(100);genEx(r<15?3:r<45?2:r<80?1:0);showEx()};
+ E.ex=[];genEx(rnd(100)<10?1:0);showEx()};
 const drop0=E.drop;E.drop=id=>{if(id==='ex:out'){if(S.state!=='BETTING'||!(E.ex&&E.ex.length)){err('Exchange','Sai khu vực','');return 1}
  S.bets['ex:out']=(S.bets['ex:out']||[]).concat(S.work);S.work=[];renderWork();renderBet(zEl('ex:out'),'ex:out');return 1}return drop0(id)};
 document.addEventListener('click',e=>{const z=e.target.closest('[data-zone="ex:out"]');if(z&&S.state==='BETTING'&&S.bets['ex:out']){S.work=S.work.concat(S.bets['ex:out']);clrBet('ex:out');renderWork()}});
@@ -371,7 +415,7 @@ function checkEx(){const o=S.bets['ex:out']||[],inc=E.ex[0],to=total(o),ti=total
 {const d1=E.drop;E.drop=id=>{const r=d1(id);if(id==='ex:out'&&r&&S.bets['ex:out'])checkEx();return r}}
 /* flow: Next Game -> Last Call -> NO MORE BET -> deal */
 function setSt(s){S.state=s;if(s!=='DEALING')E.cp=false;$('st').textContent=s;$('gn').textContent='Game #'+S.gameNo;updateFlow()}
-function updateFlow(){const f=$('flow'),m={IDLE:'Next Game',COMPLETE:'Next Game',FATAL:'Next Game',BETTING:'Last Call for Bets',LAST:'NO MORE BET'};f.style.display=m[S.state]?'':'none';f.textContent=m[S.state]||''}
+function updateFlow(){const f=$('flow'),m={IDLE:'Next Game',COMPLETE:'Next Game',FATAL:'Next Game',BETTING:'Last Call for Bets',LAST:'NO MORE BET',NOBET:'End Game',DEALING:'End Game'};f.style.display=m[S.state]?'':'none';f.textContent=m[S.state]||''}
 $('flow').onclick=()=>{if(['IDLE','COMPLETE','FATAL'].includes(S.state))B['Next Game']();else if(S.state==='BETTING')B['Last Call for Bets']();else if(S.state==='LAST')setSt('NOBET')};
 {const s0=$('shoe').onclick;$('shoe').onclick=()=>{if(S.state==='FATAL')return dead();
  if(S.state==='BETTING'||S.state==='LAST')return err('Draw Card','Sai trình tự','Chưa No More Bet',1);
@@ -394,23 +438,27 @@ function avail(){const n=stg(),P=hand('P'),B_=hand('B');if(n<4)return null;const
  if(n===4&&p2<8&&b2<8&&nextSlot()===null)return null;
 
  const T={5:2,6:3,7:4,8:7,9:9};
- if(n===4){if(p2===9||b2===9)return{rate:9,kind:'TIE'};
-  if(p2===8&&b2!==8)return{rate:7,kind:'WIN',buy:'BANKER'};if(b2===8&&p2!==8)return{rate:7,kind:'WIN',buy:'PLAYER'};if(p2>=8||b2>=8)return null;
-  if(p2===5&&b2===4)return{rate:2,kind:'WIN',buy:'BANKER'};if(p2===6)return{rate:3,kind:'WIN',buy:'BANKER'};if(p2===7)return{rate:4,kind:'WIN',buy:'BANKER'};return null}
- if(B_.length===3){const bp=pt(B_);return T[bp]?{rate:T[bp],kind:'WIN',buy:'PLAYER'}:null}
- if(P.length===3){const pp=pt(P);if(pp>=5)return{rate:T[pp],kind:'WIN',buy:'BANKER'};
-  const L=[[0,0,2],[1,1,6],[1,2,7],[1,3,7],[1,4,7],[1,5,7],[1,6,7],[2,2,3],[2,3,4],[2,4,4],[2,5,4],[2,6,4],[3,4,1.5],[4,5,2]];const m=L.find(x=>x[0]===pp&&x[1]===b2);return m?{rate:m[2],kind:'WIN',buy:'PLAYER'}:null}
+ if(n===4){
+  if(p2===9||b2===9){if(p2===9&&b2===9)return null;return{rate:9,kind:'TIE',buy:p2===9?'PLAYER':'BANKER'}}
+  if(p2===8&&b2!==8)return{rate:7,kind:'WIN',buy:'PLAYER'};if(b2===8&&p2!==8)return{rate:7,kind:'WIN',buy:'BANKER'};if(p2>=8||b2>=8)return null;
+  if(p2>b2){if(p2===5)return b2===4?{rate:2,kind:'WIN',buy:'PLAYER'}:null;if(p2===6||p2===7)return{rate:T[p2],kind:'WIN',buy:'PLAYER'};return null}
+  if(b2>p2){if(b2===5)return p2===4?{rate:2,kind:'WIN',buy:'BANKER'}:null;if(b2===6||b2===7)return{rate:T[b2],kind:'WIN',buy:'BANKER'};return null}
+  return null}
+ if(B_.length===3){const bp=pt(B_);if(bp===9)return{rate:9,kind:'TIE',buy:'BANKER'};return bp>=5?{rate:T[bp],kind:'WIN',buy:'BANKER'}:null}
+ if(P.length===3){const pp=pt(P);
+  if(pp>=5){if(pp===9)return{rate:9,kind:'TIE',buy:'PLAYER'};if(b2>pp&&b2<=7)return{rate:T[b2],kind:'WIN',buy:'BANKER'};return{rate:T[pp],kind:'WIN',buy:'PLAYER'}}
+  const L=[[0,0,2],[1,1,6],[1,2,7],[1,3,7],[1,4,7],[1,5,7],[1,6,7],[2,2,3],[2,3,4],[2,4,4],[2,5,4],[2,6,4],[3,4,1.5],[4,5,2]];const m=L.find(x=>x[0]===pp&&x[1]===b2);return m?{rate:m[2],kind:'WIN',buy:'BANKER'}:null}
  return null}
 function status(id,R){if(id.startsWith('main'))return R.w==='TIE'?'push':id.split(':')[2]===R.w?'win':'lose';
- if(id.startsWith('ins:')){const m=E.insM[id.slice(4)];return m.kind==='TIE'?(R.w==='TIE'?'win':'lose'):(R.w===m.side?'win':'lose')}
+ if(id.startsWith('ins:')){const m=E.insM[id.slice(4)];return m.kind==='TIE'?(R.w==='TIE'?'win':'lose'):(R.w!=='TIE'&&R.w!==m.side?'win':'lose')}
  const n=side(id);return n==='TIE'?(R.w==='TIE'?'win':'lose'):n==='PLAYER PAIR'?(E.pp?'win':'lose'):n==='BANKER PAIR'?(E.bp?'win':'lose'):'push'}
 function due(id){const t=total(S.bets[id]);if(id.startsWith('main'))return(E.R.b==6&&id.endsWith('BANKER'))?t/2:t;
  if(id.startsWith('ins:')){const m=E.insM[id.slice(4)];return m.amt*m.num/m.den}return t*(side(id)==='TIE'?8:11)}
 const ov=document.createElement('div');ov.style.cssText='position:fixed;inset:0;z-index:60;background:#000c;display:none;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;color:#d4a62a;font-size:13px;padding:10px';document.body.appendChild(ov);
 B['Sell Insurance']=()=>{if(S.state!=='DEALING'||!avail())return err('Sell Insurance','Không có Insurance','');
  if(E.insClosed[stg()])return err('Sell Insurance','Insurance đã đóng','');
- ov.innerHTML='<div style="width:100%;text-align:center">Tỷ lệ Insurance</div>';
- E.insSide=null;{const row=document.createElement('div');row.style.cssText='width:100%;display:flex;gap:8px;justify-content:center';const sbs=[];['PLAYER','BANKER'].forEach(s=>{const b=document.createElement('button');b.textContent=s;b.style.fontSize='14px';b.onclick=()=>{E.insSide=s;sbs.forEach(([x,t])=>{x.style.background=t===s?'#d4a62a':'';x.style.color=t===s?'#000':''})};sbs.push([b,s]);row.appendChild(b)});ov.appendChild(row)}
+ ov.innerHTML='<div style="width:100%;text-align:center">Tỷ lệ Insurance · '+E.insSide+'</div>';
+ 
  [1.5,2,3,4,6,7,9].forEach(r=>{const b=document.createElement('button');b.textContent='1:'+r;b.style.fontSize='14px';b.onclick=()=>sell(r);ov.appendChild(b)});
  const c=document.createElement('button');c.textContent='Hủy';c.onclick=()=>ov.style.display='none';ov.appendChild(c);ov.style.display='flex'};
 function renderPile(z,amt){z.querySelector('.pile')?.remove();const p=document.createElement('div');p.className='pile';runs(chipsFor(amt)).forEach(r=>p.appendChild(chipRun(r)));z.appendChild(p)}
@@ -459,10 +507,10 @@ function tick(){const s=S.state;
  const ms=E.t0?((E.tE||Date.now())-E.t0):0,sec=Math.floor(ms/1000);
  $('tm').textContent=String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');
  const t=statText(),sb=$('sb');sb.textContent=t;sb.style.background=SC[t];
- $('insb').textContent=E.insOpen?'Close Ins.':'Sell Ins.';
+ $('insb').style.display=E.insOpen?'':'none';
  const col={P:'#ff7b7b',B:'#9bbcff',T:'#6fe08a',x:'#bbb'},h=$('hist');h.innerHTML='';
  E.hist.forEach(x=>{const d=document.createElement('div');d.textContent=x.r+' · '+x.s+'s';d.style.color=col[x.c];h.appendChild(d)})}
-$('insb').onclick=()=>{if(S.state==='FATAL')return dead();E.insOpen?B['Close Insurance']():B['Sell Insurance']();tick()};
+$('insb').onclick=()=>{if(S.state==='FATAL')return dead();if(E.insOpen)B['Close Insurance']();tick()};
 setInterval(tick,250);
 /* ===== v6 ===== */
 function toast(t){const e=$('toast');e.innerHTML='';const f=/^(FATAL|Game đã dừng)/.test(t);
@@ -501,7 +549,7 @@ document.addEventListener('click',e=>{const z=e.target.closest('[data-zone^="ex:
  if(z&&S.bets[z.dataset.zone]&&exOK()){S.work=S.work.concat(S.bets[z.dataset.zone]);clrBet(z.dataset.zone);renderWork()}});
 {const ng3=B['Next Game'];B['Next Game']=()=>{ng3();showEx()}}
 {const ci0=B['Close Insurance'];B['Close Insurance']=()=>{if(E.ex&&E.ex.length)return err('Close Insurance','Chưa hoàn tất đổi tiền','');ci0()}}
-let prevIns=false;setInterval(()=>{if(E.insOpen&&!prevIns){const r=rnd(100);genEx(r<20?3:r<50?2:r<80?1:0);showEx()}prevIns=E.insOpen},250);
+let prevIns=false;setInterval(()=>{if(E.insOpen&&!prevIns){genEx(rnd(100)<10?1:0);showEx()}prevIns=E.insOpen},250);
 /* ===== v7: pass đúng khách, Fix Chip, Settings (min bàn), bot cheating ===== */
 E.passed={};E.pass=null;E.ord=[];E.rm=false;E.set={min:1000000};
 try{Object.assign(E.set,JSON.parse(localStorage.getItem('bdt_set')))}catch(e){}
@@ -521,7 +569,8 @@ function betErr(a){const t=total(a);if(a.length>10)return'Vượt số chip tố
  if(!a.every((v,i,x)=>!i||x[i-1]>=v))return'Chip không đúng thứ tự';return null}
 
 $('flow').onclick=()=>{if(['IDLE','COMPLETE','FATAL'].includes(S.state))B['Next Game']();else if(S.state==='BETTING')B['Last Call for Bets']();
- else if(S.state==='LAST'){if(Object.keys(S.bets).some(id=>id.startsWith('main:')&&betErr(S.bets[id])))return err('No More Bet','Bet sai chưa được sửa','',1);setSt('NOBET')}};
+ else if(S.state==='LAST'){if(Object.keys(S.bets).some(id=>id.startsWith('main:')&&betErr(S.bets[id])))return err('No More Bet','Bet sai chưa được sửa','',1);setSt('NOBET')}
+ else if(S.state==='NOBET'||S.state==='DEALING')B['End Game']()};
 {const lc2=B['Last Call for Bets'];B['Last Call for Bets']=()=>{lc2();if(S.state==='LAST'){E.rm=false;clearBlink()}}}
 B['Settings']=()=>{if(!['IDLE','COMPLETE','FATAL'].includes(S.state))return err('Settings','Không đổi được khi đang chơi','');
  ov.innerHTML='<div style="width:100%;text-align:center">Settings · Main Bet Minimum (VND)</div><input id="smin" type="number" inputmode="numeric" value="'+E.set.min+'" style="font-size:16px;width:160px"><button id="sok">Lưu</button><button id="scn">Hủy</button>';
@@ -538,7 +587,8 @@ B['Settings']=()=>{if(!['IDLE','COMPLETE','FATAL'].includes(S.state))return err(
 const done4=()=>stg()===4&&nextSlot()===null;           // 4 lá đã có kết quả luôn
 const resNow=()=>{const p=pt(hand('P')),b=pt(hand('B'));return p>b?'PLAYER':b>p?'BANKER':'TIE'};
 const mainLoseNow=()=>{const w=resNow();return Object.keys(S.bets).filter(id=>id.startsWith('main:')&&w!=='TIE'&&id.split(':')[2]!==w)};
-const allUp=()=>S.cards.every((c,i)=>!c||S.up[i]);   // mọi lá đã đặt đều phải ngửa
+const allUp=()=>S.cards.every((c,i)=>!c||S.up[i]);
+const bThirdPending=()=>!!(S.cards[5]&&!S.up[5]&&nextSlot()===null&&[0,1,2,3,4].every(i=>!S.cards[i]||S.up[i]));   // mọi lá đã đặt đều phải ngửa
 const sideUp=k=>{const g=k==='P'?[0,1]:[2,3];return g.every(i=>S.cards[i]&&S.up[i])};
 const pairSideUp=id=>sideUp(side(id)==='PLAYER PAIR'?'P':'B');
 const fourUp=()=>sideUp('P')&&sideUp('B');                 // cả 4 lá đầu đã mở
@@ -547,14 +597,14 @@ const pairLoseOpen=()=>fourUp()?pairLose():[];             // chỉ gom được
 function natWin(){if(stg()!==4)return false;const p=pt(hand('P').slice(0,2)),b=pt(hand('B').slice(0,2));if(p<8&&b<8)return false;
  const up=sideUp('P')?'P':sideUp('B')?'B':null;if(!up||(sideUp('P')&&sideUp('B')))return false;return(up==='P'?p:b)>=8}
 const natHand=()=>{const p=pt(hand('P').slice(0,2)),b=pt(hand('B').slice(0,2));return p>=8||b>=8};
-function upGate(sell){if(S.state!=='DEALING'||stg()<4||allUp())return false;if(sell&&natWin())return false;
+function upGate(sell){if(S.state!=='DEALING'||stg()<4||allUp()||bThirdPending())return false;if(sell&&natWin())return false;
  say('Nhắc nhở: phải mở/pass đủ 4 lá bài trước khi bán bảo hiểm, kéo lá thứ 3 hoặc thu Pair');return true}
 function pairGate(){if(S.state==='DEALING'&&b3First()&&sideUp('B')&&pairLose().some(id=>side(id)==='BANKER PAIR')){say('Nhắc nhở: thu Pair trước khi làm bước khác');return true}
  if(S.state!=='DEALING'||stg()<4||!allUp()||done4()||!pairLoseOpen().length)return false;
  say('Nhắc nhở: thu Pair trước khi làm bước khác');return true}
 function insDue(actSide){if(S.state!=='DEALING'||E.insOpen||E.insClosed[stg()])return false;
  if(natHand()){if(!natWin())return false;if(actSide&&sideUp(actSide==='PLAYER'?'P':'B'))return false}   // natural: phải bán trước khi mở nhà còn lại
- else if(!allUp()||nextSlot()===null)return false;
+ else if(!bThirdPending()&&(!allUp()||nextSlot()===null))return false;
  const a=avail();if(!a)return false;
  return Object.keys(S.bets).some(id=>id.startsWith('main:')&&(!a.buy||id.endsWith(':'+a.buy)))}
 function insMissed(act,actSide){if(!insDue(actSide))return false;err(act,'Bỏ qua bán Insurance','Ván có bảo hiểm nhưng không bán mà làm việc khác',1);return true}
@@ -618,7 +668,7 @@ function bankerFirst(){const m=Object.keys(S.bets).filter(id=>id.startsWith('mai
 })();
 
 /* ===== v10 ===== */
-const b3First=()=>{if(S.state!=='DEALING'||stg()!==4)return false;const p=pt(hand('P')),b=pt(hand('B'));return p<8&&b<=2};
+const b3First=()=>{if(S.state!=='DEALING'||stg()!==4)return false;const p=pt(hand('P')),b=pt(hand('B'));return p>=6&&p<8&&b<=2};
 {const a0=avail;avail=function(){return b3First()?null:a0()}}
 /* side bet: điều kiện thắng + tỉ lệ (Dragon Tiger) */
 function sideMul(n){const R=E.R,pl=hand('P').length,bl=hand('B').length,w=R.w,T={4:30,5:40,6:100};
@@ -633,7 +683,7 @@ function sideMul(n){const R=E.R,pl=hand('P').length,bl=hand('B').length,w=R.w,T=
  if(n==='7/6 BANKER')return w==='BANKER'&&R.b===7&&R.p===6?(T[pl+bl]||0):0;
  return 0}
 function status(id,R){if(id.startsWith('main'))return R.w==='TIE'?'push':id.split(':')[2]===R.w?'win':'lose';
- if(id.startsWith('ins:')){const m=E.insM[id.slice(4)];return m.kind==='TIE'?(R.w==='TIE'?'win':'lose'):(R.w===m.side?'win':'lose')}
+ if(id.startsWith('ins:')){const m=E.insM[id.slice(4)];return m.kind==='TIE'?(R.w==='TIE'?'win':'lose'):(R.w!=='TIE'&&R.w!==m.side?'win':'lose')}
  return sideMul(side(id))>0?'win':'lose'}
 function due(id){const t=total(S.bets[id]);if(id.startsWith('main'))return(E.R.b==6&&id.endsWith('BANKER'))?t/2:t;
  if(id.startsWith('ins:')){const m=E.insM[id.slice(4)];return m.amt*m.num/m.den}return t*sideMul(side(id))}
@@ -708,5 +758,6 @@ function drawRm(){const id=E.rx,a=S.bets[id];if(!a||!a.length){ov.style.display=
  a.forEach((v,i)=>{const c=chipEl(v);c.style.setProperty('--s','30px');c.onclick=()=>{a.splice(i,1);if(a.length)renderBet(zEl(id),id);else clrBet(id);drawRm()};r.appendChild(c)});ov.appendChild(r);
  ov.appendChild(mk('Xóa hết',()=>{clrBet(id);ov.style.display='none'}));ov.appendChild(mk('Xong',()=>ov.style.display='none'));ov.style.display='flex'}
 setInterval(()=>{const b=$('rmb');if(b){b.style.background=E.rm?'#d4a62a':'';b.style.color=E.rm?'#000':''}},250);
+{const eg=B['End Game'];B['End Game']=()=>{if(S.state==='DEALING'&&bThirdPending()&&insMissed('End Game'))return;eg()}}
 setSt('IDLE');tick();
 </script></body></html>
