@@ -483,21 +483,43 @@ document.addEventListener('click',e=>{const z=e.target.closest('[data-zone]');if
 /* ===== Insurance ===== */
 E.insM={};E.insClosed={};E.used={};E.offer=null;E.offers=[];E.soldS={};E.insOpen=false;E.rounds=[];E.insN=0;E.insCols={};
 const stg=()=>S.cards.filter(Boolean).length;
-function avail(){const n=stg(),P=hand('P'),B_=hand('B');if(n<4)return null;const p2=pt(P.slice(0,2)),b2=pt(B_.slice(0,2));
- if(n===4&&p2<8&&b2<8&&nextSlot()===null)return null;
-
- const T={5:2,6:3,7:4,8:7,9:9};
+/* ===== Luật Insurance (theo tài liệu) ===== */
+const IT={5:2,6:3,7:4,8:7,9:9};
+const mkI=(buy,v)=>({rate:IT[v],kind:v===9?'TIE':'WIN',buy});
+/* bảng bảo hiểm NGƯỢC cho Banker khi Player mở lá 3 và có dưới 5 điểm: [Player, Banker, tỷ lệ] */
+const REV=[[0,0,2],[1,1,6],[1,2,7],[1,3,7],[1,4,7],[1,5,7],[1,6,7],[2,2,3],[2,3,4],[2,4,4],[2,5,4],[2,6,4],[3,4,1.5],[4,5,2]];
+/* khóa cửa sổ bảo hiểm: mỗi lần mở bài khác nhau là 1 cửa sổ riêng */
+const ikey=()=>{const n=stg();return n===6?((S.up[5]&&!S.up[4])?'6B':'6P'):String(n)};
+/* Player vừa mở lá 3: Player 5-9 (phải lớn hơn Banker) -> bán Player; Player dưới 5 -> chỉ theo bảng ngược cho Banker */
+function p3cand(){const pl=pt(hand('P')),bt=pt(hand('B'));
+ if(pl>=5)return pl>bt?mkI('PLAYER',pl):null;
+ const m=REV.find(x=>x[0]===pl&&x[1]===bt);return m?{rate:m[2],kind:'WIN',buy:'BANKER'}:null}
+/* Banker có lá 3: Banker từ 5 điểm và phải lớn hơn Player -> bán Banker (9 điểm = Tie 1:9); Player đứng 6/7 lớn hơn Banker -> bán Player */
+function b3cand(){const P=hand('P'),pl=pt(P),bp=pt(hand('B'));
+ if(bp>=5&&bp>pl)return mkI('BANKER',bp);
+ if(P.length===2&&pl>=5&&pl>bp)return mkI('PLAYER',pl);return null}
+function avail(){const n=stg();if(n<4)return null;
+ const P=hand('P'),B_=hand('B'),p2=pt(P.slice(0,2)),b2=pt(B_.slice(0,2)),U=i=>!!S.up[i];
  if(n===4){
-  if(p2===9||b2===9){if(p2===9&&b2===9)return null;return{rate:9,kind:'TIE',buy:p2===9?'PLAYER':'BANKER'}}
-  if(p2===8&&b2!==8)return{rate:7,kind:'WIN',buy:'PLAYER'};if(b2===8&&p2!==8)return{rate:7,kind:'WIN',buy:'BANKER'};if(p2>=8||b2>=8)return null;
-  if(p2>b2){if(p2===5)return b2===4?{rate:2,kind:'WIN',buy:'PLAYER'}:null;if(p2===6||p2===7)return{rate:T[p2],kind:'WIN',buy:'PLAYER'};return null}
-  if(b2>p2){if(b2===5)return p2===4?{rate:2,kind:'WIN',buy:'BANKER'}:null;if(b2===6||b2===7)return{rate:T[b2],kind:'WIN',buy:'BANKER'};return null}
+  /* 2 lá có Natural 8/9: bán cho bên điểm lớn hơn; 9 = Tie 1:9, 8 = 1:7; bằng nhau thì không bán */
+  if(p2>=8||b2>=8){if(p2===b2)return null;const sd=p2>b2?'PLAYER':'BANKER',v=Math.max(p2,b2);return v===9?{rate:9,kind:'TIE',buy:sd}:{rate:7,kind:'WIN',buy:sd}}
+  /* sau 4 lá: bên có 5/6/7 và lớn hơn nhà kia; điểm 5 chỉ bán khi nhà kia 4 điểm; ván đã xong sau 4 lá thì không bán */
+  if(nextSlot()===null)return null;
+  const sd=p2>b2?'PLAYER':b2>p2?'BANKER':null;if(!sd)return null;
+  const v=Math.max(p2,b2),o=Math.min(p2,b2);
+  if(v<5||(v===5&&o!==4))return null;
+  return mkI(sd,v)}
+ if(n===5){
+  if(S.cards[4])return(U(4)&&nextSlot()===5)?p3cand():null;                 // Player mở lá 3, Banker còn phải rút
+  if(S.cards[5])return(!U(5)||!(U(0)&&U(1)))?b3cand():null;                 // Banker lá 3 (Player đứng): trước khi mở lá 3, hoặc đã mở mà Player còn úp
   return null}
- if(B_.length===3){const bp=pt(B_);if(bp===9)return{rate:9,kind:'TIE',buy:'BANKER'};if(P.length===2&&p2>=6&&p2<8&&bp<p2)return{rate:T[p2],kind:'WIN',buy:'PLAYER'};return bp>=5?{rate:T[bp],kind:'WIN',buy:'BANKER'}:null}
- if(P.length===3){const pp=pt(P);
-  if(pp>=5){if(pp===9)return{rate:9,kind:'TIE',buy:'PLAYER'};if(b2>pp&&b2<=7)return{rate:T[b2],kind:'WIN',buy:'BANKER'};return{rate:T[pp],kind:'WIN',buy:'PLAYER'}}
-  const L=[[0,0,2],[1,1,6],[1,2,7],[1,3,7],[1,4,7],[1,5,7],[1,6,7],[2,2,3],[2,3,4],[2,4,4],[2,5,4],[2,6,4],[3,4,1.5],[4,5,2]];const m=L.find(x=>x[0]===pp&&x[1]===b2);return m?{rate:m[2],kind:'WIN',buy:'BANKER'}:null}
+ if(n===6){
+  if(!indB())return(U(4)&&!U(5))?b3cand():null;                              // Banker rút sau Player: bán khi lá 3 Banker còn úp
+  if(U(5)&&!U(4))return b3cand();                                            // 2 nhà cùng rút: Banker mở trước, lá 3 Player còn úp
+  if(U(4)&&!U(5))return p3cand();
+  return null}
  return null}
+const bFirstWin=()=>stg()===5&&!!S.cards[5]&&[2,3,5].every(i=>S.up[i])&&!(S.up[0]&&S.up[1]);   // Banker đã mở hết, Player còn úp
 function status(id,R){if(id.startsWith('main'))return R.w==='TIE'?'push':id.split(':')[2]===R.w?'win':'lose';
  if(id.startsWith('ins:')){const m=E.insM[id];return m.kind==='TIE'?(R.w==='TIE'?'win':'lose'):(R.w!=='TIE'&&R.w!==m.side?'win':'lose')}
  const n=side(id);return n==='TIE'?(R.w==='TIE'?'win':'lose'):n==='PLAYER PAIR'?(E.pp?'win':'lose'):n==='BANKER PAIR'?(E.bp?'win':'lose'):'push'}
@@ -505,7 +527,7 @@ function due(id){const t=total(S.bets[id]);if(id.startsWith('main'))return(E.R.b
  if(id.startsWith('ins:')){const m=E.insM[id];return m.amt*m.num/m.den}return t*(side(id)==='TIE'?8:11)}
 const ov=document.createElement('div');ov.style.cssText='position:fixed;inset:0;z-index:60;background:#000c;display:none;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;color:#d4a62a;font-size:13px;padding:10px';document.body.appendChild(ov);
 B['Sell Insurance']=()=>{if(S.state!=='DEALING'||!avail())return err('Sell Insurance','Không có Insurance','');
- if(E.insClosed[stg()])return err('Sell Insurance','Insurance đã đóng','');
+ if(E.insClosed[ikey()])return err('Sell Insurance','Insurance đã đóng','');
  ov.innerHTML='<div style="width:100%;text-align:center">Tỷ lệ Insurance · '+E.insSide+'</div>';
  
  [1.5,2,3,4,6,7,9].forEach(r=>{const b=document.createElement('button');b.textContent='1:'+r;b.style.fontSize='14px';b.onclick=()=>sell(r);ov.appendChild(b)});
@@ -515,12 +537,12 @@ function sell(rate){const a=avail();ov.style.display='none';
  if(!a)return err('Sell Insurance','Không có Insurance','');
  if(a.rate!==rate)return err('Sell Insurance','Sai tỷ lệ Insurance','',1);
  const zs=Object.keys(S.bets).filter(id=>id.startsWith('main:')&&(!a.buy||id.endsWith(':'+a.buy)));
- if(!zs.length){E.insClosed[stg()]=1;return say('Không có khách mua Insurance',1500)}
+ if(!zs.length){E.insClosed[ikey()]=1;return say('Không có khách mua Insurance',1500)}
  const zone=zs[rnd(zs.length)],T=total(S.bets[zone]),amt0=100000*(1+rnd(Math.max(1,Math.ceil(T/50000))));
  E.insOpen=true;E.offer={zone,side:zone.split(':')[2],amt0,num:a.rate*2,den:2,kind:a.kind};renderPile(zEl(zone),amt0)}
 B['Close Insurance']=()=>{if(!E.insOpen)return err('Close Insurance','Không có Insurance đang mở','');
  if((E.offers||[]).some(o=>!o.done))return err('Close Insurance','Chưa nhận hết Insurance','Còn khách chưa thu tiền bảo hiểm');
- E.insOpen=false;E.offers=[];document.querySelectorAll('.pile').forEach(e=>e.remove());{const a=avail(),st=stg(),sd=(E.soldS[st]=E.soldS[st]||{}),need=a&&a.buy?[a.buy]:['PLAYER','BANKER'].filter(s=>Object.keys(S.bets).some(id=>id.startsWith('main:')&&id.endsWith(':'+s)));if(need.every(s=>sd[s]))E.insClosed[st]=1}say('Đã đóng Insurance',1200)};
+ E.insOpen=false;E.offers=[];document.querySelectorAll('.pile').forEach(e=>e.remove());{const a=avail(),st=ikey(),sd=(E.soldS[st]=E.soldS[st]||{}),need=a&&a.buy?[a.buy]:['PLAYER','BANKER'].filter(s=>Object.keys(S.bets).some(id=>id.startsWith('main:')&&id.endsWith(':'+s)));if(need.every(s=>sd[s]))E.insClosed[st]=1}say('Đã đóng Insurance',1200)};
 document.addEventListener('click',e=>{const z=e.target.closest('[data-zone]');if(!z)return;const zid=z.dataset.zone,mz=zid.startsWith('ins:')?zid.split(':').slice(2).join(':'):zid;const of=(E.offers||[]).find(x=>!x.done&&x.zone===mz);if(!of)return;E.cur=of;
  ov.innerHTML='<div style="width:100%;text-align:center">Số tiền Insurance (VND)</div><input id="ai" type="number" inputmode="numeric" style="font-size:16px;width:150px"><button id="aok">OK</button><button id="acn">Hủy</button>';
  ov.style.display='flex';$('acn').onclick=()=>ov.style.display='none';$('aok').onclick=confirmIns});
@@ -653,14 +675,14 @@ function natWin(){if(stg()!==4)return false;const p=pt(hand('P').slice(0,2)),b=p
 const natHand=()=>{const p=pt(hand('P').slice(0,2)),b=pt(hand('B').slice(0,2));return p>=8||b>=8};
 function upGate(sell){if(S.state==='DEALING'&&thirdA()){if(sell){say('Nhắc nhở: cả 2 nhà đều rút lá 3, phải kéo lá thứ 3 của Banker ra úp trước khi bán bảo hiểm');return true}return false}
  if(S.state==='DEALING'&&bothThird())return false;
- if(S.state!=='DEALING'||stg()<4||allUp()||bThirdPending())return false;if(sell&&natWin())return false;
+ if(S.state!=='DEALING'||stg()<4||allUp()||bThirdPending()||bFirstWin())return false;if(sell&&natWin())return false;
  say('Nhắc nhở: phải mở/pass đủ 4 lá bài trước khi bán bảo hiểm, kéo lá thứ 3 hoặc thu Pair');return true}
 function pairGate(){if(S.state==='DEALING'&&b3First()&&sideUp('B')&&pairLose().some(id=>side(id)==='BANKER PAIR')){say('Nhắc nhở: thu Pair trước khi làm bước khác');return true}
  if(S.state!=='DEALING'||stg()<4||!allUp()||done4()||!pairLoseOpen().length)return false;
  say('Nhắc nhở: thu Pair trước khi làm bước khác');return true}
-function insDue(actSide){if(S.state!=='DEALING'||E.insOpen||E.insClosed[stg()])return false;
+function insDue(actSide){if(S.state!=='DEALING'||E.insOpen||E.insClosed[ikey()])return false;
  if(natHand()){if(!natWin())return false;if(actSide&&sideUp(actSide==='PLAYER'?'P':'B'))return false}   // natural: phải bán trước khi mở nhà còn lại
- else if(!bThirdPending()&&!bothThird()&&(!allUp()||nextSlot()===null))return false;
+ else if(!bThirdPending()&&!bothThird()&&!bFirstWin()&&(!allUp()||nextSlot()===null))return false;
  const a=avail();if(!a)return false;
  if(Object.values(E.soldS).some(o=>o&&(a.buy?o[a.buy]:(o.PLAYER||o.BANKER))))return false;
  return Object.keys(S.bets).some(id=>id.startsWith('main:')&&(!a.buy||id.endsWith(':'+a.buy)))}
@@ -681,7 +703,7 @@ function bankerFirst(){const m=Object.keys(S.bets).filter(id=>id.startsWith('mai
   if(k==='oc'&&sd==='PLAYER'&&bankerFirst()){$('cardAct').style.display='none';return err('Open Card','Sai thứ tự mở bài','Khách chỉ đặt Banker: phải pass Banker cho khách trước khi mở Player',1)}
   if(thirdA()&&grp(sel).includes(4)){$('cardAct').style.display='none';return err(k==='oc'?'Open Card':'Pass Card','Sai thứ tự','Cả 2 nhà đều rút lá 3: phải kéo lá thứ 3 của Banker ra úp trước, rồi mới mở/pass Player',1)}
   if(pairGate()||insMissed(k==='oc'?'Open Card':'Pass Card',sd)){$('cardAct').style.display='none';return}
-  if(bothThird()&&grp(sel).includes(4)&&!S.up[5]&&!Object.keys(S.bets).some(id=>id.startsWith('main:')&&id.endsWith(':PLAYER'))){$('cardAct').style.display='none';return err(k==='oc'?'Open Card':'Pass Card','Sai thứ tự mở bài','Không có khách đặt Player: phải mở/pass lá thứ 3 của Banker trước để khách Banker mua bảo hiểm',1)}}
+  if(bothThird()&&grp(sel).includes(4)&&!S.up[5]&&(!Object.keys(S.bets).some(id=>id.startsWith('main:')&&id.endsWith(':PLAYER'))||(b3cand()&&b3cand().buy==='BANKER'&&Object.keys(S.bets).some(id=>id.startsWith('main:')&&id.endsWith(':BANKER'))))){$('cardAct').style.display='none';return err(k==='oc'?'Open Card':'Pass Card','Sai thứ tự mở bài','Phải mở/pass lá thứ 3 của Banker trước (Player còn úp) để khách Banker mua bảo hiểm',1)}}
  f()}});
 /* ===== v9: mobile — khoá scroll/zoom, kéo-thả chip ổn định, chỉ nhấn được thứ cần nhấn ===== */
 (()=>{
@@ -791,11 +813,11 @@ function sell(rate){const a=avail();
  if(a.rate!==rate)return err('Sell Insurance','Sai tỷ lệ Insurance','',1);
  if(a.buy&&a.buy!==E.insSide)return err('Sell Insurance','Sai bên Insurance','',1);
  const sd=E.insSide,pool=Object.keys(S.bets).filter(id=>id.startsWith('main:')&&id.endsWith(':'+sd));
- if(!pool.length){if(a.buy)E.insClosed[stg()]=1;return say('Không có khách '+sd+' mua Insurance',1500)}
- const n=Math.min(pool.length,2+rnd(3));E.offers=[];const st0=stg();let ri=E.rounds.indexOf(st0);if(ri<0){E.rounds.push(st0);ri=E.rounds.length-1}const rd=Math.min(ri+1,3);
+ if(!pool.length){if(a.buy)E.insClosed[ikey()]=1;return say('Không có khách '+sd+' mua Insurance',1500)}
+ const n=Math.min(pool.length,2+rnd(3));E.offers=[];const st0=ikey();let ri=E.rounds.indexOf(st0);if(ri<0){E.rounds.push(st0);ri=E.rounds.length-1}const rd=Math.min(ri+1,3);
  for(let i=0;i<n;i++){const zone=pool.splice(rnd(pool.length),1)[0],T=total(S.bets[zone]);
   E.offers.push({zone,side:sd,rd,amt0:100000*(1+rnd(Math.max(1,Math.ceil(T/50000)))),num:a.rate*2,den:2,kind:a.kind,done:false})}
- (E.soldS[stg()]=E.soldS[stg()]||{})[sd]=1;E.insOpen=true;E.offers.forEach(o=>hiOffer(o.zone,true))}
+ (E.soldS[ikey()]=E.soldS[ikey()]||{})[sd]=1;E.insOpen=true;E.offers.forEach(o=>hiOffer(o.zone,true))}
 const SEATS=[1,2,3,5,6,7];
 function renderIns(sd){const z=zEl('ins:'+sd),T=$('table');if(!z)return;T.querySelector('.ing[data-s="'+sd+'"]')?.remove();
  const cols=E.insCols[sd];if(!cols||!cols.length)return;
