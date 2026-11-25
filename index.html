@@ -143,8 +143,13 @@ button{cursor:pointer;outline:none;font-size:clamp(10px,calc(var(--u)*3),13px);m
 #table .az.insbuy{background:#c4000033}
 #table .ing{position:absolute;transform:translate(-50%,-50%);display:grid;gap:1px;z-index:6;pointer-events:none;transition:transform .15s}
 #table.insbig .ing{transform:translate(-50%,-50%) scale(1.7);z-index:20}
-.inscell{width:var(--c);height:var(--c);border-radius:50%;border:1px dashed #d4a62a99;box-sizing:border-box;position:relative;display:flex;align-items:center;justify-content:center;font-size:5px;color:#fff}
-.inscell.on{border:1px solid #ffd54a;background:#000b;pointer-events:auto}
+.inscell{width:var(--w);display:flex;flex-direction:column;align-items:center;gap:0;position:relative;pointer-events:none}
+.inscell.on{pointer-events:auto}
+.insc{width:var(--c);height:var(--c);border-radius:50%;border:1px dashed #d4a62a99;box-sizing:border-box;display:flex;align-items:center;justify-content:center}
+.inscell.on .insc{border:1px solid #ffd54a;background:#000b}
+.inscell.on.off .insc{border:1px dashed #d4a62a99;background:none}
+.insl{font-size:7px;font-weight:800;color:#fff;line-height:1;margin-top:1px;white-space:nowrap;text-shadow:0 0 3px #000,0 0 3px #000;min-height:7px}
+.inscell.pay .insl{color:#ffd54a;font-size:8px}
 .inscell .bet{position:static;background:none;padding:0;transform:none;display:flex}
 .inscell .bet .chip{--s:calc(var(--c) - 3px)}
 #bn{position:fixed;left:50%;top:6%;transform:translateX(-50%);z-index:90;pointer-events:none;display:none;font-weight:900;letter-spacing:1px;text-align:center;white-space:nowrap;font-size:clamp(26px,calc(var(--u,6px)*7),60px);opacity:.82;text-shadow:0 2px 10px #000,0 0 3px #000}
@@ -787,12 +792,13 @@ const SEATS=[1,2,3,5,6,7];
 function renderIns(sd){const z=zEl('ins:'+sd),T=$('table');if(!z)return;T.querySelector('.ing[data-s="'+sd+'"]')?.remove();
  const cols=E.insCols[sd];if(!cols||!cols.length)return;
  const recs=Object.keys(E.insM).filter(k=>E.insM[k].side===sd),rows=Math.max(1,...recs.map(k=>E.insM[k].rd));
- const c=cols.length<=3?18:cols.length<=4?15:12,g=document.createElement('div');g.className='ing';g.dataset.s=sd;g.style.setProperty('--c',c+'px');
- g.style.gridTemplateColumns='repeat('+cols.length+',var(--c))';
- g.style.left=(parseFloat(z.style.left)+parseFloat(z.style.width)/2)+'%';g.style.top=(parseFloat(z.style.top)+parseFloat(z.style.height)*0.36)+'%';
+ const c=cols.length<=3?22:cols.length<=4?19:16,w=Math.max(c,28),g=document.createElement('div');g.className='ing';g.dataset.s=sd;g.style.setProperty('--c',c+'px');g.style.setProperty('--w',w+'px');
+ g.style.gridTemplateColumns='repeat('+cols.length+',var(--w))';
+ g.style.left=(parseFloat(z.style.left)+parseFloat(z.style.width)/2)+'%';g.style.top=(parseFloat(z.style.top)+parseFloat(z.style.height)*0.22)+'%';
  for(let r=1;r<=rows;r++)cols.forEach(seat=>{const cell=document.createElement('div');cell.className='inscell';
+  const circ=document.createElement('div');circ.className='insc';const lab=document.createElement('div');lab.className='insl';cell.appendChild(circ);cell.appendChild(lab);
   const k=recs.find(k=>E.insM[k].rd===r&&E.insM[k].seat===seat);
-  if(k){cell.classList.add('on');cell.dataset.zone=k;const a=S.bets[k];if(a&&a.length){const b=document.createElement('div');b.className='bet';b.appendChild(chipEl(a[0]));cell.appendChild(b)}}
+  if(k){cell.classList.add('on');cell.dataset.zone=k;const a=S.bets[k];if(a&&a.length){const b=document.createElement('div');b.className='bet';b.appendChild(chipEl(a[0]));circ.appendChild(b)}lab.textContent=fmt(E.insM[k].amt)}
   g.appendChild(cell)});
  T.appendChild(g)}
 function confirmIns(){const amt=+$('ai').value,o=E.cur;if(!o||o.done)return;
@@ -835,10 +841,13 @@ function uniqTotal(a,seen){let t=total(a);if(!seen.has(t)){seen.add(t);return a}
   else if(st==='NOBET'&&prev!=='NOBET')banner('NO MORE BET','#ff3b30');
   else if(st==='COLLECT'&&prev!=='COLLECT'&&E.R){const w=E.R.w;banner(w==='TIE'?'TIE  '+E.R.p+' - '+E.R.b:w+' WIN  '+E.R.p+' - '+E.R.b,w==='PLAYER'?'#ff7ab8':w==='BANKER'?'#4da3ff':'#4ade80')}}}
 /* vòng tròn bảo hiểm phóng to khi thu/chung tiền để dễ thả chip */
-setInterval(()=>$('table').classList.toggle('insbig',['COLLECT','PAY'].includes(S.state)),200);
+setInterval(()=>{$('table').classList.toggle('insbig',['COLLECT','PAY'].includes(S.state));
+ document.querySelectorAll('.inscell.on').forEach(c=>{const k=c.dataset.zone,m=E.insM[k],has=!!S.bets[k];c.classList.toggle('off',!has);
+  const pay=S.state==='PAY'&&E.due&&E.due[k]!=null;c.classList.toggle('pay',pay);
+  c.querySelector('.insl').textContent=!has||!m?'':pay?'chung '+fmt(E.due[k]):fmt(m.amt)})},200);
 /* ===== chạm vào bet để xem chi tiết (không áp dụng khi đang gom/chung tiền) ===== */
 function showBetInfo(id){const a=S.bets[id];let h;
- if(id.startsWith('ins:')){const m=E.insM[id];h='Bảo hiểm '+m.side+' · Seat '+m.seat+' · lần '+m.rd+' · 1 trả '+(m.num/m.den)+' · '+m.amt.toLocaleString('vi-VN')}
+ if(id.startsWith('ins:')){const m=E.insM[id];h='Bảo hiểm '+m.side+' · Seat '+m.seat+' · lần '+m.rd+' · mua '+m.amt.toLocaleString('vi-VN')+' · 1 trả '+(m.num/m.den)+' → nếu thắng chung '+(m.amt*m.num/m.den).toLocaleString('vi-VN')}
  else if(id.startsWith('main:')){const q=id.split(':');h='Seat '+q[1]+' · '+q[2]+' · '+total(a).toLocaleString('vi-VN')}
  else h=side(id)+' · '+total(a).toLocaleString('vi-VN');
  ov.innerHTML='';const t=document.createElement('div');t.style.cssText='width:100%;text-align:center;font-size:14px;font-weight:700';t.textContent=h;ov.appendChild(t);
@@ -848,10 +857,11 @@ function showBetInfo(id){const a=S.bets[id];let h;
  d.textContent=runs(a).map(x=>fmt(x.v)+' ×'+x.n).join('  +  ')+'   =   '+total(a).toLocaleString('vi-VN')+'  ('+a.length+' chip)';ov.appendChild(d);
  const b=document.createElement('button');b.textContent='Đóng';b.onclick=()=>ov.style.display='none';ov.appendChild(b);ov.style.display='flex'}
 document.addEventListener('click',e=>{
- if(['COLLECT','PAY'].includes(S.state)||E.cp||E.rm||E.pass||E.insOpen||E.cur||E.offer)return;
+ const z=e.target.closest('[data-zone]'),id=z&&z.dataset.zone,isIns=!!id&&id.startsWith('ins:');
+ if(S.state==='COLLECT'||(S.state==='PAY'&&!isIns)||E.cp||E.rm||E.pass||(E.insOpen&&!isIns)||E.cur||E.offer)return;
  if(ov.style.display==='flex'||$('menu').style.display==='flex'||$('cardAct').style.display==='flex'||$('toast').style.display==='flex')return;
  if(typeof drag!=='undefined'&&drag.moved)return;
- const z=e.target.closest('[data-zone]');if(!z)return;const id=z.dataset.zone;
+ if(!z)return;
  if(id.startsWith('ex:')||!S.bets[id]||!S.bets[id].length)return;showBetInfo(id)},true);
 
 $('zin').onclick=()=>document.body.classList.add('zoomed');
