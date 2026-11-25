@@ -142,14 +142,14 @@ button{cursor:pointer;outline:none;font-size:clamp(10px,calc(var(--u)*3),13px);m
 #tsvg path.insbuy{stroke:#c40000;stroke-width:4px;fill:#c4000040}
 #table .az.insbuy{background:#c4000033}
 #table .ing{position:absolute;transform:translate(-50%,-50%);display:grid;gap:1px;z-index:6;pointer-events:none;transition:transform .15s}
-#table.insbig .ing{transform:translate(-50%,-50%) scale(1.7);z-index:20}
+#table.insbig .ing{transform:translate(-50%,-50%) scale(1.25);z-index:20}
 .inscell{width:var(--w);display:flex;flex-direction:column;align-items:center;gap:0;position:relative;pointer-events:none}
 .inscell.on{pointer-events:auto}
 .insc{width:var(--c);height:var(--c);border-radius:50%;border:1px dashed #d4a62a99;box-sizing:border-box;display:flex;align-items:center;justify-content:center}
 .inscell.on .insc{border:1px solid #ffd54a;background:#000b}
 .inscell.on.off .insc{border:1px dashed #d4a62a99;background:none}
-.insl{font-size:7px;font-weight:800;color:#fff;line-height:1;margin-top:1px;white-space:nowrap;text-shadow:0 0 3px #000,0 0 3px #000;min-height:7px}
-.inscell.pay .insl{color:#ffd54a;font-size:8px}
+.insl{font-size:max(5px,calc(var(--c)*.34));font-weight:800;color:#fff;line-height:1;margin-top:1px;white-space:nowrap;text-shadow:0 0 3px #000,0 0 3px #000;min-height:7px}
+.inscell.pay .insl{color:#ffd54a}
 .inscell .bet{position:static;background:none;padding:0;transform:none;display:flex}
 .inscell .bet .chip{--s:calc(var(--c) - 3px)}
 #bn{position:fixed;left:50%;top:6%;transform:translateX(-50%);z-index:90;pointer-events:none;display:none;font-weight:900;letter-spacing:1px;text-align:center;white-space:nowrap;font-size:clamp(26px,calc(var(--u,6px)*7),60px);opacity:.82;text-shadow:0 2px 10px #000,0 0 3px #000}
@@ -172,8 +172,8 @@ body.zoomed #zin{display:none}body.zoomed #zout{display:block}
 body.zoomed #top,body.zoomed #aye,body.zoomed #cards{display:none}
 body.zoomed #table .az{font-size:clamp(9px,calc(var(--u)*2.7),16px)}
 body.zoomed #table>.bet.ov{font-size:11px}
-body.zoomed #table .ing{transform:translate(-50%,-50%) scale(1.5)}
-body.zoomed #table.insbig .ing{transform:translate(-50%,-50%) scale(2.2)}
+body.zoomed #table .ing{transform:translate(-50%,-50%) scale(1.1)}
+body.zoomed #table.insbig .ing{transform:translate(-50%,-50%) scale(1.4)}
 body.zoomed #table .insbtn,body.zoomed #table #moreb{font-size:12px;min-height:26px}
 /* bet: chỉ hiện số tiền, nằm đè lên chip */
 .bet.amt{background:none;padding:0;gap:0}
@@ -493,7 +493,7 @@ function avail(){const n=stg(),P=hand('P'),B_=hand('B');if(n<4)return null;const
   if(p2>b2){if(p2===5)return b2===4?{rate:2,kind:'WIN',buy:'PLAYER'}:null;if(p2===6||p2===7)return{rate:T[p2],kind:'WIN',buy:'PLAYER'};return null}
   if(b2>p2){if(b2===5)return p2===4?{rate:2,kind:'WIN',buy:'BANKER'}:null;if(b2===6||b2===7)return{rate:T[b2],kind:'WIN',buy:'BANKER'};return null}
   return null}
- if(B_.length===3){const bp=pt(B_);if(bp===9)return{rate:9,kind:'TIE',buy:'BANKER'};return bp>=5?{rate:T[bp],kind:'WIN',buy:'BANKER'}:null}
+ if(B_.length===3){const bp=pt(B_);if(bp===9)return{rate:9,kind:'TIE',buy:'BANKER'};if(P.length===2&&p2>=6&&p2<8&&bp<p2)return{rate:T[p2],kind:'WIN',buy:'PLAYER'};return bp>=5?{rate:T[bp],kind:'WIN',buy:'BANKER'}:null}
  if(P.length===3){const pp=pt(P);
   if(pp>=5){if(pp===9)return{rate:9,kind:'TIE',buy:'PLAYER'};if(b2>pp&&b2<=7)return{rate:T[b2],kind:'WIN',buy:'BANKER'};return{rate:T[pp],kind:'WIN',buy:'PLAYER'}}
   const L=[[0,0,2],[1,1,6],[1,2,7],[1,3,7],[1,4,7],[1,5,7],[1,6,7],[2,2,3],[2,3,4],[2,4,4],[2,5,4],[2,6,4],[3,4,1.5],[4,5,2]];const m=L.find(x=>x[0]===pp&&x[1]===b2);return m?{rate:m[2],kind:'WIN',buy:'BANKER'}:null}
@@ -662,6 +662,7 @@ function insDue(actSide){if(S.state!=='DEALING'||E.insOpen||E.insClosed[stg()])r
  if(natHand()){if(!natWin())return false;if(actSide&&sideUp(actSide==='PLAYER'?'P':'B'))return false}   // natural: phải bán trước khi mở nhà còn lại
  else if(!bThirdPending()&&!bothThird()&&(!allUp()||nextSlot()===null))return false;
  const a=avail();if(!a)return false;
+ if(Object.values(E.soldS).some(o=>o&&(a.buy?o[a.buy]:(o.PLAYER||o.BANKER))))return false;
  return Object.keys(S.bets).some(id=>id.startsWith('main:')&&(!a.buy||id.endsWith(':'+a.buy)))}
 function insMissed(act,actSide){if(!insDue(actSide))return false;err(act,'Bỏ qua bán Insurance','Ván có bảo hiểm nhưng không bán mà làm việc khác',1);return true}
 // khách chỉ đặt Banker: phải pass Banker cho khách trước khi mở Player
@@ -799,7 +800,7 @@ const SEATS=[1,2,3,5,6,7];
 function renderIns(sd){const z=zEl('ins:'+sd),T=$('table');if(!z)return;T.querySelector('.ing[data-s="'+sd+'"]')?.remove();
  const cols=E.insCols[sd];if(!cols||!cols.length)return;
  const recs=Object.keys(E.insM).filter(k=>E.insM[k].side===sd),rows=Math.max(1,...recs.map(k=>E.insM[k].rd));
- const c=cols.length<=3?22:cols.length<=4?19:16,w=Math.max(c,28),g=document.createElement('div');g.className='ing';g.dataset.s=sd;g.style.setProperty('--c',c+'px');g.style.setProperty('--w',w+'px');
+ const zw=z.offsetWidth||120,zh=z.offsetHeight||60,cW=Math.floor(zw*.9/cols.length)-4,cH=Math.floor(zh*.8/rows/1.45),c=Math.max(10,Math.min(20,cW,cH)),w=c+4,g=document.createElement('div');g.className='ing';g.dataset.s=sd;g.style.setProperty('--c',c+'px');g.style.setProperty('--w',w+'px');
  g.style.gridTemplateColumns='repeat('+cols.length+',var(--w))';
  g.style.left=(parseFloat(z.style.left)+parseFloat(z.style.width)/2)+'%';g.style.top=(parseFloat(z.style.top)+parseFloat(z.style.height)*0.22)+'%';
  for(let r=1;r<=rows;r++)cols.forEach(seat=>{const cell=document.createElement('div');cell.className='inscell';
