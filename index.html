@@ -134,15 +134,45 @@ button{cursor:pointer;outline:none;font-size:clamp(10px,calc(var(--u)*3),13px);m
 #table .az.blink{animation:bk .7s infinite alternate}
 #table .sn{position:absolute;transform:translate(-50%,-50%);color:#fff;font:800 clamp(9px,calc(var(--u)*2.4),14px) system-ui,sans-serif;pointer-events:none;z-index:2}
 #table .logo{position:absolute;left:50%;top:80%;font-size:10px;text-align:center;transform:translate(-50%,-50%);flex:none;z-index:1;white-space:nowrap}
-#table .insbtn{position:absolute;top:92%;transform:translate(-50%,-50%);z-index:5;min-height:30px;padding:0 8px;font-size:clamp(9px,calc(var(--u)*2.2),12px)}
+#table .insbtn{position:absolute;top:95%;transform:translate(-50%,-50%);z-index:5;min-height:22px;padding:0 6px;font-size:clamp(9px,calc(var(--u)*2.2),12px)}
 #table .insbtn.PLAYER{color:#ff7b7b}
 #table .closeins{position:absolute;left:50%;top:92%;transform:translate(-50%,-50%);z-index:5;min-height:30px;padding:0 8px;font-size:clamp(9px,calc(var(--u)*2.2),12px)}
 #bank button.bk{align-self:center;min-height:40px;padding:0 14px;font-size:13px}
 #table #moreb{position:absolute;left:6px;top:6px;z-index:5;min-height:32px;padding:0 12px;font-size:clamp(10px,calc(var(--u)*2.4),13px)}
 #tsvg path.insbuy{stroke:#c40000;stroke-width:4px;fill:#c4000040}
 #table .az.insbuy{background:#c4000033}
+#table .ing{position:absolute;transform:translate(-50%,-50%);display:grid;gap:1px;z-index:6;pointer-events:none;transition:transform .15s}
+#table.insbig .ing{transform:translate(-50%,-50%) scale(1.7);z-index:20}
+.inscell{width:var(--c);height:var(--c);border-radius:50%;border:1px dashed #d4a62a99;box-sizing:border-box;position:relative;display:flex;align-items:center;justify-content:center;font-size:5px;color:#fff}
+.inscell.on{border:1px solid #ffd54a;background:#000b;pointer-events:auto}
+.inscell .bet{position:static;background:none;padding:0;transform:none;display:flex}
+.inscell .bet .chip{--s:calc(var(--c) - 3px)}
+#bn{position:fixed;left:50%;top:6%;transform:translateX(-50%);z-index:90;pointer-events:none;display:none;font-weight:900;letter-spacing:1px;text-align:center;white-space:nowrap;font-size:clamp(26px,calc(var(--u,6px)*7),60px);opacity:.82;text-shadow:0 2px 10px #000,0 0 3px #000}
+
+/* ===== v11: gọn cho điện thoại ===== */
+#top{zoom:.5}
+#aye{zoom:.7}
+#bank{zoom:.7}
+#cards{height:38px}
+#six{width:28px;height:28px;font-size:6px}
+.card{max-width:24px}
+#tray{height:28px}#trayChips .chip{--s:17px}
+#tray button{min-height:18px;padding:2px 6px;font-size:9px}
+#table #moreb{min-height:26px;padding:0 10px;font-size:clamp(8px,calc(var(--u)*1.92),10.4px)}
+#table .insbtn{min-height:18px;padding:0 5px;font-size:clamp(7px,calc(var(--u)*1.76),9.6px)}
+#table>.bet.ov{position:absolute;right:auto;bottom:auto;transform:translate(-50%,-50%);z-index:8}
+#zin,#zout{position:fixed;top:3px;right:8px;z-index:55;min-height:26px;width:34px;padding:0;font-size:16px;line-height:1;background:#000c}
+#zout{display:none}
+body.zoomed #zin{display:none}body.zoomed #zout{display:block}
+body.zoomed #top,body.zoomed #aye,body.zoomed #cards{display:none}
+body.zoomed #table .az{font-size:clamp(9px,calc(var(--u)*2.7),16px)}
+body.zoomed #table>.bet.ov{font-size:11px}
+body.zoomed #table>.bet.ov .chip{--s:22px}
+body.zoomed #table .ing{transform:translate(-50%,-50%) scale(1.5)}
+body.zoomed #table.insbig .ing{transform:translate(-50%,-50%) scale(2.2)}
+body.zoomed #table .insbtn,body.zoomed #table #moreb{font-size:12px;min-height:26px}
 </style></head><body>
-<div id="note"></div><div id="dbg"></div>
+<button id="zin" title="Zoom">🔍</button><button id="zout" title="Thoát zoom">✕</button><div id="note"></div><div id="dbg"></div>
 <div id="app">
  <div id="top"><span class="st" id="st">IDLE</span><span class="st" id="gn">Game #0</span>
   <button id="flow">Next Game</button><button id="lc" style="display:none"></button><button id="rmb" data-a="Remove Chip">Remove Chip</button>
@@ -229,8 +259,12 @@ addEventListener('pointerup',e=>{if(!drag.on)return;drag.on=false;$('ghost').sty
  const z=zoneAt(e.clientX,e.clientY);setTimeout(()=>drag.moved=false,0);if(!z)return;
  const id=z.dataset.zone;if(E.drop(id))return;S.bets[id]=(S.bets[id]||[]).concat(S.work);S.work=[];S.bets[id]=sortInside(S.bets[id]);renderWork();renderBet(z,id)});
 function zoneAt(x,y){const el=document.elementFromPoint(x,y);return el&&el.closest('[data-zone]')}
-function renderBet(z,id){z.querySelector('.bet')?.remove();const a=S.bets[id];if(!a||!a.length)return;
- const b=document.createElement('div');b.className='bet';b.appendChild(chipEl(a[a.length-1]));b.append(fmt(total(a))+' ×'+a.length);z.appendChild(b)}
+function renderBet(z,id){z.querySelector('.bet')?.remove();document.querySelector('.bet[data-b="'+id+'"]')?.remove();const a=S.bets[id];if(!a||!a.length)return;
+ const b=document.createElement('div');b.className='bet';b.appendChild(chipEl(a[a.length-1]));b.append(fmt(total(a))+' ×'+a.length);
+ if(z.classList.contains('az')){b.classList.add('ov');b.dataset.b=id;
+  b.style.left=(parseFloat(z.style.left)+parseFloat(z.style.width)*parseFloat(z.style.getPropertyValue('--lx'))/100)+'%';
+  b.style.top='calc('+(parseFloat(z.style.top)+parseFloat(z.style.height)*parseFloat(z.style.getPropertyValue('--ly'))/100)+'% + 1.9em)';$('table').appendChild(b)}
+ else z.appendChild(b)}
 /* ===== Angle Aye + card placement (UI) ===== */
 const rank=['A','2','3','4','5','6','7','8','9','10','J','Q','K'],suit=['♠','♥','♦','♣'];
 $('shoe').onclick=()=>{S.drawn={r:rank[Math.random()*13|0],s:suit[Math.random()*4|0]};
@@ -271,7 +305,7 @@ function nextSlot(){const n=S.cards.filter(Boolean).length;if(n<4)return[0,2,1,3
  if(B.length==2&&bDraw(b,P.length==3?vl(P[2]):null))return 5;return null}
 E.place=i=>{if(i!==nextSlot()){err('Place Card','Incorrect Card Position','',1);return false}return true};
 const zEl=id=>document.querySelector('[data-zone="'+id+'"]');
-const clrBet=id=>{delete S.bets[id];zEl(id)?.querySelector('.bet')?.remove()};
+const clrBet=id=>{delete S.bets[id];zEl(id)?.querySelector('.bet')?.remove();document.querySelector('.bet[data-b="'+id+'"]')?.remove()};
 const dead=()=>{if(S.state==='FATAL'){say('Game đã dừng — bấm Next Game hoặc Reset');return true}};
 function complete(){E.d.done++;save();setSt('COMPLETE');note('Game hoàn tất',2000)}
 $('shoe').onclick=()=>{if(dead())return;
@@ -435,7 +469,7 @@ document.addEventListener('click',e=>{const z=e.target.closest('[data-zone]');if
  if(!S.bets[id]||id==='ex:out')return;if(/PAIR$/.test(side(id))&&!(fourUp()||(b3First()&&side(id)==='BANKER PAIR'&&sideUp('B')))){say('Phải mở đủ 4 lá bài thì mới gom được Pair');return}
  if(!pairLose().includes(id))return err('Collect Pair','Gom nhầm bet','',1);clrBet(id)});
 /* ===== Insurance ===== */
-E.insM={};E.insClosed={};E.used={};E.offer=null;E.offers=[];E.soldS={};E.insOpen=false;
+E.insM={};E.insClosed={};E.used={};E.offer=null;E.offers=[];E.soldS={};E.insOpen=false;E.rounds=[];E.insN=0;E.insCols={};
 const stg=()=>S.cards.filter(Boolean).length;
 function avail(){const n=stg(),P=hand('P'),B_=hand('B');if(n<4)return null;const p2=pt(P.slice(0,2)),b2=pt(B_.slice(0,2));
  if(n===4&&p2<8&&b2<8&&nextSlot()===null)return null;
@@ -453,10 +487,10 @@ function avail(){const n=stg(),P=hand('P'),B_=hand('B');if(n<4)return null;const
   const L=[[0,0,2],[1,1,6],[1,2,7],[1,3,7],[1,4,7],[1,5,7],[1,6,7],[2,2,3],[2,3,4],[2,4,4],[2,5,4],[2,6,4],[3,4,1.5],[4,5,2]];const m=L.find(x=>x[0]===pp&&x[1]===b2);return m?{rate:m[2],kind:'WIN',buy:'BANKER'}:null}
  return null}
 function status(id,R){if(id.startsWith('main'))return R.w==='TIE'?'push':id.split(':')[2]===R.w?'win':'lose';
- if(id.startsWith('ins:')){const m=E.insM[id.slice(4)];return m.kind==='TIE'?(R.w==='TIE'?'win':'lose'):(R.w!=='TIE'&&R.w!==m.side?'win':'lose')}
+ if(id.startsWith('ins:')){const m=E.insM[id];return m.kind==='TIE'?(R.w==='TIE'?'win':'lose'):(R.w!=='TIE'&&R.w!==m.side?'win':'lose')}
  const n=side(id);return n==='TIE'?(R.w==='TIE'?'win':'lose'):n==='PLAYER PAIR'?(E.pp?'win':'lose'):n==='BANKER PAIR'?(E.bp?'win':'lose'):'push'}
 function due(id){const t=total(S.bets[id]);if(id.startsWith('main'))return(E.R.b==6&&id.endsWith('BANKER'))?t/2:t;
- if(id.startsWith('ins:')){const m=E.insM[id.slice(4)];return m.amt*m.num/m.den}return t*(side(id)==='TIE'?8:11)}
+ if(id.startsWith('ins:')){const m=E.insM[id];return m.amt*m.num/m.den}return t*(side(id)==='TIE'?8:11)}
 const ov=document.createElement('div');ov.style.cssText='position:fixed;inset:0;z-index:60;background:#000c;display:none;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;color:#d4a62a;font-size:13px;padding:10px';document.body.appendChild(ov);
 B['Sell Insurance']=()=>{if(S.state!=='DEALING'||!avail())return err('Sell Insurance','Không có Insurance','');
  if(E.insClosed[stg()])return err('Sell Insurance','Insurance đã đóng','');
@@ -475,7 +509,7 @@ function sell(rate){const a=avail();ov.style.display='none';
 B['Close Insurance']=()=>{if(!E.insOpen)return err('Close Insurance','Không có Insurance đang mở','');
  if((E.offers||[]).some(o=>!o.done))return err('Close Insurance','Chưa nhận hết Insurance','Còn khách chưa thu tiền bảo hiểm');
  E.insOpen=false;E.offers=[];document.querySelectorAll('.pile').forEach(e=>e.remove());{const a=avail(),st=stg(),sd=(E.soldS[st]=E.soldS[st]||{}),need=a&&a.buy?[a.buy]:['PLAYER','BANKER'].filter(s=>Object.keys(S.bets).some(id=>id.startsWith('main:')&&id.endsWith(':'+s)));if(need.every(s=>sd[s]))E.insClosed[st]=1}say('Đã đóng Insurance',1200)};
-document.addEventListener('click',e=>{const z=e.target.closest('[data-zone]');if(!z)return;const of=(E.offers||[]).find(x=>!x.done&&x.zone===z.dataset.zone);if(!of)return;E.cur=of;
+document.addEventListener('click',e=>{const z=e.target.closest('[data-zone]');if(!z)return;const zid=z.dataset.zone,mz=zid.startsWith('ins:')?zid.split(':').slice(2).join(':'):zid;const of=(E.offers||[]).find(x=>!x.done&&x.zone===mz);if(!of)return;E.cur=of;
  ov.innerHTML='<div style="width:100%;text-align:center">Số tiền Insurance (VND)</div><input id="ai" type="number" inputmode="numeric" style="font-size:16px;width:150px"><button id="aok">OK</button><button id="acn">Hủy</button>';
  ov.style.display='flex';$('acn').onclick=()=>ov.style.display='none';$('aok').onclick=confirmIns});
 function confirmIns(){const amt=+$('ai').value,o=E.offer;if(!(amt>0))return err('Insurance','Invalid amount','');
@@ -486,7 +520,7 @@ function confirmIns(){const amt=+$('ai').value,o=E.offer;if(!(amt>0))return err(
  E.used[o.zone]=used;const tot=(m?m.amt:0)+amt;E.insM[o.side]={amt:tot,num:o.num,den:o.den,kind:o.kind,side:o.side};
  S.bets['ins:'+o.side]=chipsFor(tot);renderBet(zEl('ins:'+o.side),'ins:'+o.side);E.offer=null;document.querySelectorAll('.pile').forEach(e=>e.remove());ov.style.display='none';say('Đã nhận Insurance',1200)}
 {const ng1=B['Next Game'];B['Next Game']=()=>{const was=S.state;ng1();if(S.state!=='BETTING'||was==='BETTING')return;
- E.insM={};E.insClosed={};E.used={};E.offer=null;E.offers=[];E.soldS={};E.insOpen=false;document.querySelectorAll('.pile').forEach(e=>e.remove())}}
+ E.insM={};E.insClosed={};E.used={};E.offer=null;E.offers=[];E.soldS={};E.insOpen=false;E.rounds=[];E.insN=0;E.insCols={};document.querySelectorAll('.pile,.ing').forEach(e=>e.remove())}}
 /* ===== v5: popup, status bar, timer, history, merged insurance button ===== */
 function toast(t){const e=$('toast');e.innerHTML='';const d=document.createElement('div');d.textContent=t;e.appendChild(d);
  const b=document.createElement('button');b.textContent='OK';b.onclick=()=>e.style.display='none';e.appendChild(b);
@@ -695,10 +729,10 @@ function sideMul(n){const R=E.R,pl=hand('P').length,bl=hand('B').length,w=R.w,T=
  if(n==='7/6 BANKER')return w==='BANKER'&&R.b===7&&R.p===6?(T[pl+bl]||0):0;
  return 0}
 function status(id,R){if(id.startsWith('main'))return R.w==='TIE'?'push':id.split(':')[2]===R.w?'win':'lose';
- if(id.startsWith('ins:')){const m=E.insM[id.slice(4)];return m.kind==='TIE'?(R.w==='TIE'?'win':'lose'):(R.w!=='TIE'&&R.w!==m.side?'win':'lose')}
+ if(id.startsWith('ins:')){const m=E.insM[id];return m.kind==='TIE'?(R.w==='TIE'?'win':'lose'):(R.w!=='TIE'&&R.w!==m.side?'win':'lose')}
  return sideMul(side(id))>0?'win':'lose'}
 function due(id){const t=total(S.bets[id]);if(id.startsWith('main'))return(E.R.b==6&&id.endsWith('BANKER'))?t/2:t;
- if(id.startsWith('ins:')){const m=E.insM[id.slice(4)];return m.amt*m.num/m.den}return t*sideMul(side(id))}
+ if(id.startsWith('ins:')){const m=E.insM[id];return m.amt*m.num/m.den}return t*sideMul(side(id))}
 /* Pay: chỉ cần thu cược thua; cược hòa (Main khi Tie) giữ nguyên, chỉ chung cược thắng */
 function pay(){if(S.state==='PAY')return err('Pay','Chưa chung đủ','Còn cược thắng chưa thanh toán');
  if(S.state!=='COLLECT')return err('Pay','Sai trình tự','Chưa thể thanh toán');
@@ -745,18 +779,33 @@ function sell(rate){const a=avail();
  if(a.buy&&a.buy!==E.insSide)return err('Sell Insurance','Sai bên Insurance','',1);
  const sd=E.insSide,pool=Object.keys(S.bets).filter(id=>id.startsWith('main:')&&id.endsWith(':'+sd));
  if(!pool.length){if(a.buy)E.insClosed[stg()]=1;return say('Không có khách '+sd+' mua Insurance',1500)}
- const n=Math.min(pool.length,2+rnd(3));E.offers=[];
+ const n=Math.min(pool.length,2+rnd(3));E.offers=[];const st0=stg();let ri=E.rounds.indexOf(st0);if(ri<0){E.rounds.push(st0);ri=E.rounds.length-1}const rd=Math.min(ri+1,3);
  for(let i=0;i<n;i++){const zone=pool.splice(rnd(pool.length),1)[0],T=total(S.bets[zone]);
-  E.offers.push({zone,side:sd,amt0:100000*(1+rnd(Math.max(1,Math.ceil(T/50000)))),num:a.rate*2,den:2,kind:a.kind,done:false})}
+  E.offers.push({zone,side:sd,rd,amt0:100000*(1+rnd(Math.max(1,Math.ceil(T/50000)))),num:a.rate*2,den:2,kind:a.kind,done:false})}
  (E.soldS[stg()]=E.soldS[stg()]||{})[sd]=1;E.insOpen=true;E.offers.forEach(o=>hiOffer(o.zone,true))}
+const SEATS=[1,2,3,5,6,7];
+function renderIns(sd){const z=zEl('ins:'+sd),T=$('table');if(!z)return;T.querySelector('.ing[data-s="'+sd+'"]')?.remove();
+ const cols=E.insCols[sd];if(!cols||!cols.length)return;
+ const recs=Object.keys(E.insM).filter(k=>E.insM[k].side===sd),rows=Math.max(1,...recs.map(k=>E.insM[k].rd));
+ const c=cols.length<=3?18:cols.length<=4?15:12,g=document.createElement('div');g.className='ing';g.dataset.s=sd;g.style.setProperty('--c',c+'px');
+ g.style.gridTemplateColumns='repeat('+cols.length+',var(--c))';
+ g.style.left=(parseFloat(z.style.left)+parseFloat(z.style.width)/2)+'%';g.style.top=(parseFloat(z.style.top)+parseFloat(z.style.height)*0.36)+'%';
+ for(let r=1;r<=rows;r++)cols.forEach(seat=>{const cell=document.createElement('div');cell.className='inscell';
+  const k=recs.find(k=>E.insM[k].rd===r&&E.insM[k].seat===seat);
+  if(k){cell.classList.add('on');cell.dataset.zone=k;const a=S.bets[k];if(a&&a.length){const b=document.createElement('div');b.className='bet';b.appendChild(chipEl(a[0]));cell.appendChild(b)}}
+  g.appendChild(cell)});
+ T.appendChild(g)}
 function confirmIns(){const amt=+$('ai').value,o=E.cur;if(!o||o.done)return;
  if(!(amt>0))return err('Insurance','Invalid amount','');
- const m=E.insM[o.side];if(m&&(m.num!==o.num||m.kind!==o.kind))return err('Insurance','Khác tỷ lệ','');
  if(amt%50000||(o.num===3&&amt%100000))return err('Insurance','Invalid Unit','');
- 
  const used=(E.used[o.zone]||0)+amt;if(used*o.num>total(S.bets[o.zone])*o.den)return err('Insurance','Vượt Main Bet','');
- E.used[o.zone]=used;const tot=(m?m.amt:0)+amt;E.insM[o.side]={amt:tot,num:o.num,den:o.den,kind:o.kind,side:o.side};
- S.bets['ins:'+o.side]=chipsFor(tot);renderBet(zEl('ins:'+o.side),'ins:'+o.side);
+ const seat=+o.zone.split(':')[1],sd=o.side;
+ if(!E.insCols[sd])E.insCols[sd]=SEATS.filter(n=>S.bets['main:'+n+':'+sd]);
+ if(!E.insCols[sd].includes(seat)){E.insCols[sd].push(seat);E.insCols[sd].sort((a,b)=>a-b)}
+ /* mỗi khách = 1 vòng tròn riêng (không gộp), đúng cột ghế, đúng hàng của lần bảo hiểm */
+ const iid='ins:'+sd+':'+(++E.insN);
+ E.used[o.zone]=used;E.insM[iid]={amt,num:o.num,den:o.den,kind:o.kind,side:sd,zone:o.zone,seat,rd:o.rd};
+ S.bets[iid]=chipsFor(amt);renderIns(sd);
  o.done=true;hiOffer(o.zone,false);E.cur=null;ov.style.display='none';{const unit=o.num===3?100000:50000,mx=Math.floor(total(S.bets[o.zone])*o.den/o.num/unit)*unit;note(used>=mx?'Bạn đã mua maximum':'Bạn đã mua bảo hiểm',2200)}}
 /* Remove Chip: chạm vào cược (main hoặc side) để xoá chip */
 B['Remove Chip']=()=>{if(S.state!=='BETTING')return err('Remove Chip','Sai thời điểm','');E.rm=!E.rm;clearBlink();
@@ -776,5 +825,38 @@ function clearHi(){document.querySelectorAll('.insbuy').forEach(e=>e.classList.r
 function uniqTotal(a,seen){let t=total(a);if(!seen.has(t)){seen.add(t);return a}
  for(let k=0;k<60;k++){t+=100000;if(seen.has(t))continue;const c=chipsFor(t);if(c.length<=10){seen.add(t);return c}}
  seen.add(total(a));return a}
+{const d9=E.drop;E.drop=id=>{if(id.startsWith('ins:')&&S.state!=='PAY'){err('Bet','Không đặt cược vào ô bảo hiểm','');return 1}return d9(id)}}
+/* ===== thông báo lớn 2 giây ===== */
+{const bn=document.createElement('div');bn.id='bn';document.body.appendChild(bn);
+ window.banner=(t,col)=>{bn.textContent=t;bn.style.color=col||'#ffd54a';bn.style.display='block';clearTimeout(banner.t);banner.t=setTimeout(()=>bn.style.display='none',2000)};
+ const ss0=setSt;setSt=function(st){const prev=S.state;ss0(st);
+  if(st==='BETTING'&&prev!=='BETTING')banner('NEXT GAME','#c084fc');
+  else if(st==='LAST'&&prev==='BETTING')banner('LAST CALL FOR BETS','#facc15');
+  else if(st==='NOBET'&&prev!=='NOBET')banner('NO MORE BET','#ff3b30');
+  else if(st==='COLLECT'&&prev!=='COLLECT'&&E.R){const w=E.R.w;banner(w==='TIE'?'TIE  '+E.R.p+' - '+E.R.b:w+' WIN  '+E.R.p+' - '+E.R.b,w==='PLAYER'?'#ff7ab8':w==='BANKER'?'#4da3ff':'#4ade80')}}}
+/* vòng tròn bảo hiểm phóng to khi thu/chung tiền để dễ thả chip */
+setInterval(()=>$('table').classList.toggle('insbig',['COLLECT','PAY'].includes(S.state)),200);
+/* ===== chạm vào bet để xem chi tiết (không áp dụng khi đang gom/chung tiền) ===== */
+function showBetInfo(id){const a=S.bets[id];let h;
+ if(id.startsWith('ins:')){const m=E.insM[id];h='Bảo hiểm '+m.side+' · Seat '+m.seat+' · lần '+m.rd+' · 1 trả '+(m.num/m.den)+' · '+m.amt.toLocaleString('vi-VN')}
+ else if(id.startsWith('main:')){const q=id.split(':');h='Seat '+q[1]+' · '+q[2]+' · '+total(a).toLocaleString('vi-VN')}
+ else h=side(id)+' · '+total(a).toLocaleString('vi-VN');
+ ov.innerHTML='';const t=document.createElement('div');t.style.cssText='width:100%;text-align:center;font-size:14px;font-weight:700';t.textContent=h;ov.appendChild(t);
+ const r=document.createElement('div');r.style.cssText='display:flex;gap:6px;flex-wrap:wrap;width:100%;justify-content:center;min-height:36px;pointer-events:none';
+ runs(a).forEach(x=>{const c=chipRun(x);c.style.setProperty('--s','32px');r.appendChild(c)});ov.appendChild(r);
+ const d=document.createElement('div');d.style.cssText='width:100%;text-align:center;font-size:12px';
+ d.textContent=runs(a).map(x=>fmt(x.v)+' ×'+x.n).join('  +  ')+'   =   '+total(a).toLocaleString('vi-VN')+'  ('+a.length+' chip)';ov.appendChild(d);
+ const b=document.createElement('button');b.textContent='Đóng';b.onclick=()=>ov.style.display='none';ov.appendChild(b);ov.style.display='flex'}
+document.addEventListener('click',e=>{
+ if(['COLLECT','PAY'].includes(S.state)||E.cp||E.rm||E.pass||E.insOpen||E.cur||E.offer)return;
+ if(ov.style.display==='flex'||$('menu').style.display==='flex'||$('cardAct').style.display==='flex'||$('toast').style.display==='flex')return;
+ if(typeof drag!=='undefined'&&drag.moved)return;
+ const z=e.target.closest('[data-zone]');if(!z)return;const id=z.dataset.zone;
+ if(id.startsWith('ex:')||!S.bets[id]||!S.bets[id].length)return;showBetInfo(id)},true);
+
+$('zin').onclick=()=>document.body.classList.add('zoomed');
+$('zout').onclick=()=>document.body.classList.remove('zoomed');
+{const mbv=()=>{const m=$('moreb');if(m)m.style.display=S.state==='BETTING'?'':'none'};mbv();setInterval(mbv,200)}
+
 setSt('IDLE');tick();
 </script></body></html>
